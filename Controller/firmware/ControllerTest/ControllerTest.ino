@@ -2,11 +2,11 @@
 // Board: "XIAO_ESP32C3" (esp32:esp32:XIAO_ESP32C3)
 // Safe default: brake engaged + VFD disabled until firmware commands otherwise.
 
-// --- Pin map (from schematic) ---
-constexpr uint8_t PIN_K1_BRAKE = 8;  // K1 brake relay via Q1
-constexpr uint8_t PIN_K2_MOTOR = 7;  // K2 motor/VFD enable relay via Q2
-constexpr uint8_t PIN_LED_RED  = 5;  // K1 status
-constexpr uint8_t PIN_LED_BLUE = 6;  // K2 status
+// --- Pin map (schematic net labels are XIAO D-pin numbers) ---
+constexpr uint8_t PIN_K1_BRAKE = D8; // GPIO8  — K1 brake relay via Q1
+constexpr uint8_t PIN_K2_MOTOR = D7; // GPIO20 — K2 motor/VFD relay via Q2
+constexpr uint8_t PIN_LED_RED  = D5; // GPIO7  — K1 status
+constexpr uint8_t PIN_LED_BLUE = D6; // GPIO21 — K2 status
 
 // --- LED PWM ---
 constexpr uint32_t LED_FREQ = 5000;

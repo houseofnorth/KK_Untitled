@@ -1,2 +1,3 @@
 Controller/build/
 .DS_Store
+Controller/firmware/**/build/
