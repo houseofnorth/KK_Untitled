@@ -30,11 +30,19 @@ Board: XIAO_ESP32C3 (esp32 core 3.x). Board LED names: D1 red = brake, D5 green 
 
 #define FW_VERSION "1.0.0"
 
-// --- Pins ---
-constexpr uint8_t PIN_BRAKE     = D8; // GPIO8  K1: 24V coil brake (on = released)
-constexpr uint8_t PIN_MOVE      = D7; // GPIO20 K2: VersiDrive run input
-constexpr uint8_t PIN_LED_BRAKE = D5; // GPIO7  red LED (D1 on board)
-constexpr uint8_t PIN_LED_MOVE  = D6; // GPIO21 green LED (D5 on board)
+// --- Pins (named after the schematic nets) ---
+constexpr uint8_t PIN_K1_GATE   = D10; // GPIO10  net K1_GATE    -> Q1 -> K1 : brake coil  (HIGH = brake released)
+constexpr uint8_t PIN_K2_GATE   = D7; // GPIO20  net K2_GATE    -> Q2 -> K2 : VFD_24V/VFD_DI1 contact (HIGH = run impulse)
+constexpr uint8_t PIN_LED_BRAKE = D5; // GPIO7   net LED_BRAKE  : onboard LED1 green + panel LED via PLED_BRAKE
+constexpr uint8_t PIN_LED_MOVE  = D6; // GPIO21  net LED_MOVE   : onboard LED2 red + panel LED via PLED_MOVE
+
+// Present on V2 hardware, not used by this firmware yet:
+constexpr uint8_t PIN_VFD_OK_SIG  = D4; // GPIO6   net VFD_OK_SIG : VersiDrive "drive OK" relay feedback (via VFD_OK_IN, active low)
+constexpr uint8_t PIN_VFD_AO_SIG  = D1; // GPIO3   net VFD_AO_SIG : VersiDrive analog out (terminal 8, via VFD_AO_IN, 68k/10k divider). Volts at T8 = mV * 7.8 / 1000
+constexpr uint8_t PIN_LED_VFD_OK  = D3; // GPIO5   net LED_VFD_OK : onboard LED3 green + panel LED via PLED_VFD_OK
+constexpr uint8_t PIN_RUN_SIG   = D2; // GPIO4   net RUN_SIG    : RUN switch (via RUN_IN)
+constexpr uint8_t PIN_BTN_SIG   = D0; // GPIO2   net BTN_SIG    : Wi-Fi / test button (via BTN_IN). Strapping pin: R11 pull-up keeps it high at reset.
+constexpr uint8_t PIN_LED_SYS   = D8; // GPIO8   net LED_SYS : blue LED4 + panel SYSTEM LED (3V3 -> R20 -> PLED_SYS -> LED -> LED_SYS), ACTIVE-LOW. Strapping pin: LED pulls it high at reset.
 
 // --- Wi-Fi ---
 const char *AP_SSID  = "KK-Untitled";
@@ -75,13 +83,13 @@ uint32_t ledDuty() { return (255 * cfg.ledPct) / 100; }
 
 void setBrakeReleased(bool on) {
   brakeReleased = on;
-  digitalWrite(PIN_BRAKE, on ? HIGH : LOW);
+  digitalWrite(PIN_K1_GATE, on ? HIGH : LOW);
   ledcWrite(PIN_LED_BRAKE, on ? ledDuty() : 0);
 }
 
 void setMove(bool on) {
   moveOn = on;
-  digitalWrite(PIN_MOVE, on ? HIGH : LOW);
+  digitalWrite(PIN_K2_GATE, on ? HIGH : LOW);
   ledcWrite(PIN_LED_MOVE, on ? ledDuty() : 0);
 }
 
@@ -318,8 +326,8 @@ void stopAP() {
 // ---------- Main ----------
 void setup() {
   // Safe state first: brake engaged, VersiDrive not running
-  pinMode(PIN_BRAKE, OUTPUT); digitalWrite(PIN_BRAKE, LOW);
-  pinMode(PIN_MOVE,  OUTPUT); digitalWrite(PIN_MOVE,  LOW);
+  pinMode(PIN_K1_GATE, OUTPUT); digitalWrite(PIN_K1_GATE, LOW);
+  pinMode(PIN_K2_GATE,  OUTPUT); digitalWrite(PIN_K2_GATE,  LOW);
   ledcAttach(PIN_LED_BRAKE, 5000, 8);
   ledcAttach(PIN_LED_MOVE,  5000, 8);
 

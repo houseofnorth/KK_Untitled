@@ -1,0 +1,7 @@
+Item,Designator,Part,Qty per board,Source
+Seeed XIAO ESP32C3,U1,113991054,1,Seeed / Mouser / Reichelt
+Phoenix header 12P 3.81 vertical,MOTOR,MCV 1.5/12-G-3.81 (1803523),1,Phoenix
+Phoenix header 10P 3.81 vertical,PANEL,MCV 1.5/10-G-3.81 (1803507),1,Phoenix
+Phoenix plug 12P 3.81,MOTOR mate,MC 1.5/12-ST-3.81,1,Phoenix
+Phoenix plug 10P 3.81,PANEL mate,MC 1.5/10-ST-3.81,1,Phoenix
+Test points,"GPIO9,GND",bare pads - no part,0,-
