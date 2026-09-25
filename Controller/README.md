@@ -7,12 +7,17 @@ Current hardware is **V2** — pin map, connectors and ordering notes in [../Con
 
 V1 pin map (old board, for reference): K1 = D8, K2 = D7, LED red = D5, LED green = D6.
 
+## Wi-Fi app — tuning page
+
+- Wi-Fi `KK-Untitled`, password `untitled2026` → http://192.168.4.1 (or http://untitled.local)
+- AP turns off 15 min after boot (setting; 0 = always on), stays up while a phone is connected
+- Starts running on power-up; Start/Stop on the page is not saved
+- OTA: upload `Untitled.ino.bin` (not merged.bin) on the page
+- Defaults = original: kick 200–900 ms, rest 10–45 s, pause 60 s every 10 min, brake waits 1250 ms
+
+## Files
+
 - `firmware/Untitled/` — **installation firmware**. Port of the original logic (kick / rest / pause) + Wi-Fi tuning page and OTA.
-  - Wi-Fi `KK-Untitled`, password `untitled2026` → http://192.168.4.1 (or http://untitled.local)
-  - AP turns off 15 min after boot (setting; 0 = always on), stays up while a phone is connected
-  - Starts running on power-up; Start/Stop on the page is not saved
-  - OTA: upload `Untitled.ino.bin` (not merged.bin) on the page
-  - Defaults = original: kick 200–900 ms, rest 10–45 s, pause 60 s every 10 min, brake waits 1250 ms
 - `firmware/ControllerTest/` — relay/LED test cycle. Board: XIAO_ESP32C3 (esp32 core 3.x).
 - `hardware/fusion/` — Fusion Electronics exports
 - `hardware/gerbers/` — Gerber zip for JLCPCB
