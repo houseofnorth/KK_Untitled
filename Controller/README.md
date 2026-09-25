@@ -3,12 +3,9 @@
 New PCB controller replacing the original Arduino setup. Drives the VersiDrive i VFD (K2) and the Seva motor's spring-applied brake (K1).
 Safe default: brake engaged, VFD disabled until firmware commands otherwise.
 
-| Signal | XIAO pin |
-|---|---|
-| K1 brake relay (via Q1) | D8 (GPIO8) |
-| K2 motor/VFD relay (via Q2) | D7 (GPIO20) |
-| LED red (K1 status) | D5 (GPIO7) |
-| LED green (K2 status) | D6 (GPIO21) |
+Current hardware is **V2** — pin map, connectors and ordering notes in [../Controller V2/README.md](../Controller%20V2/README.md). The firmware here uses the V2 pin map (K1 = D10, K2 = D7, LED_BRAKE = D5, LED_MOVE = D6).
+
+V1 pin map (old board, for reference): K1 = D8, K2 = D7, LED red = D5, LED green = D6.
 
 - `firmware/Untitled/` — **installation firmware**. Port of the original logic (kick / rest / pause) + Wi-Fi tuning page and OTA.
   - Wi-Fi `KK-Untitled`, password `untitled2026` → http://192.168.4.1 (or http://untitled.local)
