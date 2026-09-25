@@ -5,7 +5,7 @@
 Controller: [Controller V2](Controller%20V2/README.md) (current board) · [firmware](Controller/firmware/Untitled)
 
 **Artist:** Kitty Kraus  
-**Previous (original) controller:** Roman Zulek  
+**Original controller by:** Roman Zulek  
 **Revision:** Fubbi Karlsson 2026
 
 
