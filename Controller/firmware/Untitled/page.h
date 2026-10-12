@@ -65,8 +65,9 @@ progress{width:100%;height:10px}
  <div class="row"><span>Drive OK</span><span id="iv">&ndash;</span></div>
  <div class="row"><span>RUN button</span><span id="ir">&ndash;</span></div>
  <div class="row"><span>Wi-Fi button</span><span id="ib">&ndash;</span></div>
- <div class="row"><span>VFD output (T8)</span><span id="ao">&ndash;</span></div>
+ <div class="row"><span>Motor current (T8)</span><span id="ao">&ndash;</span></div>
  <div class="row"><span>Kick peak last / avg</span><span id="pk">&ndash;</span></div>
+ <div class="row"><span>Strength next / last push</span><span id="sn">&ndash;</span></div>
  <div class="row"><span>VFD faults (since boot)</span><span id="vf">&ndash;</span></div>
 </div>
 
@@ -90,7 +91,11 @@ const F=[
 const O=[
  ['useVfdOk','Stop on VFD fault','on',1,'brake on until drive OK'],['okResume','Resume after drive OK for','s',1000,''],
  ['autostart','Autostart after power-up','on',1,'off = hold RUN 2 s or press Start'],
- ['softKicks','Soft start kicks','kicks',1,'50→100 %, 0 = off']];
+ ['softKicks','Soft start kicks','kicks',1,'50→100 %, 0 = off'],
+ ['motorMa','Motor rated current (VFD P-08)','A',1000,'for the A readout, needs VFD P-25 = 9'],
+ ['useStr','Strength output','on',1,'GPIO9 → 0–10 V module → VFD AI1 (T6)'],
+ ['strInv','Strength output active low','on',1,'DIN+ → 3.3 V, DIN− → GPIO9'],
+ ['strMin','Strength min','%',1,'of 0–10 V, random per push'],['strMax','Strength max','%',1,'']];
 const A=F.concat(O);
 const $=id=>document.getElementById(id);
 function msg(t){const m=$('msg');m.textContent=t;m.style.display='block';clearTimeout(m.t);m.t=setTimeout(()=>m.style.display='none',2500)}
@@ -101,7 +106,10 @@ const fld=([k,l,u,sc,h])=>u=='on'
 $('f').innerHTML=F.map(fld).join('');$('o').innerHTML=O.map(fld).join('');
 let rev=-1,ed=new Set();   // ed = fields edited here and not saved yet
 A.forEach(([k])=>$(k).addEventListener('input',()=>ed.add(k)));
-function fill(c){rev=c.rev;A.forEach(([k,,u,sc])=>{if(ed.has(k))return;if(u=='on')$(k).checked=c[k]==1;else $(k).value=+(c[k]/sc).toFixed(3)})}
+let C={};
+// V at T8 -> "x.xx V" plus amps when P-08 is set (P-25 = 9: 0-10 V = 0-200 % of P-08)
+const amp=v=>v.toFixed(2)+' V'+(C.motorMa?' · '+(v*0.2*C.motorMa/1000).toFixed(2)+' A':'');
+function fill(c){C=c;rev=c.rev;A.forEach(([k,,u,sc])=>{if(ed.has(k))return;if(u=='on')$(k).checked=c[k]==1;else $(k).value=+(c[k]/sc).toFixed(3)})}
 async function load(){fill(await (await fetch('/api/config')).json())}
 async function save(){const p=new URLSearchParams();A.forEach(([k,,u,sc])=>{if(ed.has(k))p.append(k,u=='on'?($(k).checked?1:0):Math.round(parseFloat($(k).value||0)*sc))});
  const r=await fetch('/api/config',{method:'POST',body:p});ed.clear();fill(await r.json());msg('Saved')}
@@ -119,7 +127,8 @@ function show(s){
  $('hp').textContent=Math.round(s.heap/1024)+' kB';
  $('hold').textContent=s.hold&&s.hold!='stopped'?'Held: '+s.hold:'';
  $('iv').textContent=s.vfdOk?'OK':'not OK';$('ir').textContent=s.runSw?'pressed':'–';$('ib').textContent=s.btn?'pressed':'–';
- $('ao').textContent=s.ao.toFixed(2)+' V';$('pk').textContent=s.aoPeak<0?'–':s.aoPeak.toFixed(2)+' / '+s.aoAvg.toFixed(2)+' V';
+ $('ao').textContent=amp(s.ao);$('pk').textContent=s.aoPeak<0?'–':amp(s.aoPeak)+' / '+amp(s.aoAvg);
+ $('sn').textContent=s.str<0?'off':s.str+' % / '+(s.lastStr<0?'–':s.lastStr+' %');
  $('vf').textContent=s.faults;
 }
 async function wifiStay(){show(await (await fetch('/api/wifi',{method:'POST'})).json());msg('Wi-Fi timer reset')}

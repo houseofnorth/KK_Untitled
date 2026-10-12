@@ -23,7 +23,7 @@ Safe default: brake engaged, VFD disabled until firmware commands otherwise.
 | D6 | 21 | LED_MOVE | Motor impulse LED (onboard + panel) |
 | D7 | 20 | K2_GATE | Q2 → K2 motor/VFD run relay |
 | D8 | 8 | LED_SYS | System status LED, active low (strapping pin) |
-| D9 | 9 | PIN_9 | Test pad only (BOOT strapping pin) |
+| D9 | 9 | PIN_9 | Test pad (BOOT strapping pin). Optional strength PWM → 0–10 V module → VFD AI1, active low |
 | D10 | 10 | K1_GATE | Q1 → K1 brake relay |
 
 ## Connectors (Phoenix MCV 1.5 3.81 mm)

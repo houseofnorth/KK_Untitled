@@ -85,7 +85,9 @@ const T={
 en:{pushing:'Pushing',warn:'About to push',resting:'Resting',pause:'Long pause',starting:'Starting',stopping:'Stopping',stopped:'Stopped',
  waitVfd:'Waiting · drive fault',waitRun:'Waiting · switch off',offline:'Not connected',
  nextIn:'Next push in ',start:'Start',stop:'Stop',pushNow:'Push now',
- push:'Push',pushD:'How long the motor pushes each time, random between min and max. Longer pushes swing higher.',
+ push:'Push strength',pushD:'Each push is random between min and max. A longer push is a harder push and swings higher.',
+ pushL:'Push length',pushLD:'How long the motor pushes each time, random between min and max.',
+ str:'Push strength',strD:'How hard the motor drives each push, random between min and max.',soft:'soft',hard:'hard',
  rest:'Rest',restD:'Time from one push to the next. Each time a random value between min and max.',
  every:'Long pause every',everyD:'Now and then the piece rests for longer. Switch off for no long pauses.',never:'Never',
  plen:'Long pause length',plenD:'How long a long pause lasts, random between min and max.',
@@ -95,16 +97,19 @@ en:{pushing:'Pushing',warn:'About to push',resting:'Resting',pause:'Long pause',
 de:{pushing:'Schub',warn:'Gleich geht’s los',resting:'Ruhe',pause:'Lange Pause',starting:'Startet',stopping:'Stoppt',stopped:'Gestoppt',
  waitVfd:'Wartet · Störung Antrieb',waitRun:'Wartet · Schalter aus',offline:'Keine Verbindung',
  nextIn:'Nächster Schub in ',start:'Start',stop:'Stopp',pushNow:'Jetzt schieben',
- push:'Schub',pushD:'Wie lange der Motor jeweils schiebt, zufällig zwischen Min und Max. Längerer Schub schwingt höher.',
+ push:'Schubstärke',pushD:'Jeder Schub zufällig zwischen Min und Max. Ein längerer Schub ist ein stärkerer Schub und schwingt höher.',
+ pushL:'Schubdauer',pushLD:'Wie lange der Motor jeweils schiebt, zufällig zwischen Min und Max.',
+ str:'Schubstärke',strD:'Wie stark der Motor jeden Schub antreibt, zufällig zwischen Min und Max.',soft:'sanft',hard:'stark',
  rest:'Ruhe',restD:'Zeit von einem Schub zum nächsten. Jedes Mal zufällig zwischen Min und Max.',
  every:'Lange Pause alle',everyD:'Ab und zu ruht die Arbeit länger. Ausschalten für keine langen Pausen.',never:'Nie',
  plen:'Länge der langen Pause',plenD:'Wie lange eine lange Pause dauert, zufällig zwischen Min und Max.',
  unsaved:'Änderungen sind aktiv, aber noch nicht gespeichert',undo:'Rückgängig',save:'Speichern',saved:'Gespeichert · bleibt nach dem Ausschalten',undone:'Zurück zu den gespeicherten Werten',
  wifiOff:'WLAN aus in ',wifiConn:'WLAN geht aus, wenn du die Verbindung trennst',wifiAlways:'WLAN immer an',wifiStay:'Auf 15 Min. zurücksetzen',wifiReset:'WLAN-Timer zurückgesetzt',
  tech:'Erweiterte Einstellungen'}};
-// id, config keys, low, high (ms, log scale), can be off
+// id, config keys, low, high (ms, log scale), can be off, pct = linear 0..100 %, sh = soft/hard ends
 const S=[
- {id:'push', k:['spinMin','spinMax'],lo:50,hi:5000},
+ {id:'push', k:['spinMin','spinMax'],lo:50,hi:5000,sh:1},
+ {id:'str',  k:['strMin','strMax'],lo:0,hi:100,pct:1,sh:1},
  {id:'rest', k:['dropMin','dropMax'],lo:2000,hi:600000},
  {id:'every',k:['hangEvery','hangEveryMax'],lo:60000,hi:10800000,sw:1},
  {id:'plen', k:['hangTime','hangTimeMax'],lo:10000,hi:3600000}];
@@ -121,16 +126,24 @@ function fmt(ms){
  let m=Math.floor(s/60);s%=60;if(m<10)return m+' min'+(s?' '+s+' s':'');
  if(m<60)return m+' min';let h=Math.floor(m/60);m%=60;return h+' h'+(m?' '+m+' min':'');}
 function snap(v){const q=v<1000?10:v<10000?100:v<60000?1000:v<600000?5000:60000;return Math.round(v/q)*q}
-function toMs(d,p){return snap(d.lo*Math.pow(d.hi/d.lo,p/1000))}
-function toPos(d,v){const p=1000*Math.log(Math.max(v,d.lo)/d.lo)/Math.log(d.hi/d.lo);return Math.round(Math.min(1000,Math.max(0,p)))}
+function toMs(d,p){return d.pct?Math.round(p/10):snap(d.lo*Math.pow(d.hi/d.lo,p/1000))}
+function toPos(d,v){if(d.pct)return Math.round(Math.min(100,Math.max(0,v))*10);
+ const p=1000*Math.log(Math.max(v,d.lo)/d.lo)/Math.log(d.hi/d.lo);return Math.round(Math.min(1000,Math.max(0,p)))}
+const val=(d,v)=>d.pct?v+' %':fmt(v);
 
 $('sets').innerHTML=S.map(d=>`<div class="card set" id="c_${d.id}">
- <div class="hd"><h2 data-t="${d.id}"></h2>${d.sw?'<label class="sw"><input type="checkbox" id="sw_'+d.id+'"><i></i></label>':''}</div>
- <p data-t="${d.id}D"></p>
+ <div class="hd"><h2 id="h_${d.id}" data-t="${d.id}"></h2>${d.sw?'<label class="sw"><input type="checkbox" id="sw_'+d.id+'"><i></i></label>':''}</div>
+ <p id="p_${d.id}" data-t="${d.id}D"></p>
  <div class="val" id="v_${d.id}"></div>
  <div class="sl"><div class="tr"><i id="f_${d.id}"></i></div>
  ${d.k.map((k,i)=>`<input type="range" min="0" max="1000" id="${d.id}${i}">`).join('')}</div>
- <div class="ends"><span>${fmt(d.lo)}</span><span>${fmt(d.hi)}</span></div></div>`).join('');
+ <div class="ends">${d.sh?'<span data-t="soft"></span><span data-t="hard"></span>':`<span>${fmt(d.lo)}</span><span>${fmt(d.hi)}</span>`}</div></div>`).join('');
+
+// With the strength output on, "push" is the push length and "str" the strength; off = push length is the strength
+function labels(){const on=cfg.useStr==1;
+ $('c_str').style.display=on?'':'none';
+ $('h_push').dataset.t=on?'pushL':'push';$('p_push').dataset.t=on?'pushLD':'pushD';
+ ['h_push','p_push'].forEach(i=>$(i).textContent=t($(i).dataset.t))}
 
 function draw(d){
  const a=$(d.id+'0'),b=$(d.id+'1'),f=$('f_'+d.id);
@@ -138,7 +151,7 @@ function draw(d){
  f.style.left=pa/10+'%';f.style.right=(100-pb/10)+'%';
  const off=d.sw&&!pauseOn;
  $('v_'+d.id).innerHTML=off?'<span class="mm"><small>&nbsp;</small>'+t('never')+'</span>'
-  :`<span class="mm"><small>MIN</small>${fmt(va)}</span><span class="mm"><small>MAX</small>${fmt(vb)}</span>`;
+  :`<span class="mm"><small>MIN</small>${val(d,va)}</span><span class="mm"><small>MAX</small>${val(d,vb)}</span>`;
  cfg[d.k[0]]=off?0:va;cfg[d.k[1]]=vb;
  if(d.sw){$('c_every').classList.toggle('off',off);$('c_plen').classList.toggle('off',off)}
 }
@@ -155,7 +168,8 @@ S.forEach(d=>{
 
 function setSliders(c){cfg=c;rev=c.rev;loaded=true;
  pauseOn=c.hangEvery>0;$('sw_every').checked=pauseOn;
- S.forEach(d=>{$(d.id+'0').value=toPos(d,c[d.k[0]]||c[d.k[1]]);$(d.id+'1').value=toPos(d,c[d.k[1]]);draw(d)})}
+ S.forEach(d=>{$(d.id+'0').value=toPos(d,d.pct?c[d.k[0]]:(c[d.k[0]]||c[d.k[1]]));$(d.id+'1').value=toPos(d,c[d.k[1]]);draw(d)});
+ labels()}
 function body(){const p=new URLSearchParams();S.forEach(d=>d.k.forEach(k=>p.append(k,cfg[k])));return p}
 async function live(){tSend=0;busy++;try{const c=await (await fetch('/api/live',{method:'POST',body:body()})).json();rev=c.rev}catch(e){}busy--}
 async function post(u,b){const r=await fetch(u,{method:'POST',body:b});return r.json()}
@@ -190,7 +204,7 @@ async function poll(){try{show(await (await fetch('/api/status')).json())}catch(
 function setLang(l){L=l;try{localStorage.setItem('lang',l)}catch(e){}
  document.documentElement.lang=l;$('lEN').classList.toggle('on',l=='en');$('lDE').classList.toggle('on',l=='de');
  document.querySelectorAll('[data-t]').forEach(e=>e.textContent=t(e.dataset.t));
- if(loaded)S.forEach(draw);if(st.phase)show(st)}
+ if(loaded){S.forEach(draw);labels()}if(st.phase)show(st)}
 
 setLang(L);
 fetch('/api/config').then(r=>r.json()).then(setSliders);

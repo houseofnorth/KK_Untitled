@@ -35,6 +35,14 @@ Panel buttons (1.4.0, always active, momentary to GND):
                  button during power-up stops the board from booting.
   Web Start/Stop behave the same as the RUN button.
 
+Strength output (1.5.0, /tech, OFF by default):
+  useStr     PWM on GPIO9 (test pad) -> "3.3V PWM to 0-10V" module -> VFD AI1 (T6).
+             Strength strMin..strMax % (random), drawn after each push so the
+             module output settles during the rest. Off = GPIO9 left as input.
+  strInv     active low (default): DIN+ -> 3.3 V, DIN- -> GPIO9. Pad idles high,
+             so GPIO9 (strapping pin) stays high at boot.
+  motorMa    VFD P-08 rated current; with P-25 = 9 the AO reads A = V(T8) x 0.2 x P-08.
+
 Always active (indication only, cannot stop the piece):
   LED_VFD_OK  on = drive OK, off = not OK, fast blink = piece held by VFD fault
   LED_SYS     Wi-Fi: on while the AP is up, off when Wi-Fi is off, fast blink during OTA
@@ -53,7 +61,7 @@ Board: XIAO_ESP32C3 (esp32 core 3.x).
 #include "page.h"     // technician page  /tech
 #include "artist.h"   // artist page      /
 
-#define FW_VERSION "1.4.0"
+#define FW_VERSION "1.5.0"
 
 // --- Pins (named after the schematic nets) ---
 constexpr uint8_t PIN_K1_GATE    = D10; // GPIO10 net K1_GATE   -> Q1 -> K1 : brake coil  (HIGH = brake released)
@@ -66,6 +74,10 @@ constexpr uint8_t PIN_VFD_OK_SIG = D4;  // GPIO6  net VFD_OK_SIG: drive OK relay
 constexpr uint8_t PIN_VFD_AO_SIG = D1;  // GPIO3  net VFD_AO_SIG: VFD analog out via 68k/10k divider
 constexpr uint8_t PIN_RUN_SIG    = D2;  // GPIO4  net RUN_SIG   : RUN button, pressed = LOW (10k pull-up)
 constexpr uint8_t PIN_BTN_SIG    = D0;  // GPIO2  net BTN_SIG   : Wi-Fi button, pressed = LOW (R11 pull-up, strapping pin)
+constexpr uint8_t PIN_STRENGTH   = D9;  // GPIO9  test pad PIN_9 : strength PWM -> 0-10 V module -> VFD AI1 (strapping pin,
+                                        //        left as input unless useStr; wire active low so it idles high)
+constexpr uint32_t STR_FREQ      = 1000;  // Hz, module wants 1-3 kHz
+constexpr uint8_t  STR_BITS      = 10;
 
 constexpr float    AO_SCALE      = 7.8f;  // V at VFD terminal 8 = V at pin * 7.8
 constexpr uint32_t AO_TAIL_MS    = 1500;  // keep tracking the peak this long after a kick ends
@@ -98,13 +110,20 @@ struct Config {
   uint32_t warnMs;                    // Move LED speeding-up blink before each push (0 = off)
   // --- added in CFG_VERSION 5 ---
   uint32_t autostart;                 // 0/1 start on power-up
+  // --- added in CFG_VERSION 6 ---
+  uint32_t motorMa;                   // VFD P-08 motor rated current in mA (0 = unknown) for the A readout
+  uint32_t useStr;                    // 0/1 strength PWM on GPIO9
+  uint32_t strInv;                    // 1 = active low (DIN+ -> 3.3 V, DIN- -> GPIO9)
+  uint32_t strMin, strMax;            // % of 0-10 V, random per push
 };
 const Config DEFAULTS = {200, 900, 10000, 45000, 600000, 60000, 1250, 1250, 50, 15,
                          0, 5000, 0, 0, 0,
                          600000, 60000,
                          3000,
-                         0};
-constexpr uint32_t CFG_VERSION = 5;
+                         0,
+                         0, 0, 1, 40, 100};
+constexpr uint32_t CFG_VERSION = 6;
+constexpr size_t   CFG_V5_SIZE = 19 * sizeof(uint32_t);
 constexpr size_t   CFG_V1_SIZE = 10 * sizeof(uint32_t);
 constexpr size_t   CFG_V2_SIZE = 15 * sizeof(uint32_t);
 constexpr size_t   CFG_V3_SIZE = 17 * sizeof(uint32_t);
@@ -128,6 +147,7 @@ bool     brakeReleased = false, moveOn = false;
 uint32_t phaseStart = 0, kickStart = 0, kickLen = 0, nextKick = 0, hangoutAt = 0;
 uint32_t lastSpin = 0, lastDrop = 0, kicks = 0, pauses = 0, bootCount = 0;
 uint32_t kicksSinceStart = 0, vfdFaults = 0, lastPause = 0;
+int32_t  lastStr = -1;                     // strength % of the last push, -1 = output off
 float    warnPhase = 0;                    // Move LED warning blink phase
 bool     warnWas = false;
 bool     faultActive = false;
@@ -183,6 +203,27 @@ uint32_t randRange(uint32_t lo, uint32_t hi) {
   return lo + (esp_random() % (hi - lo + 1));
 }
 
+// ---------- Strength output (GPIO9 PWM -> 0-10 V module -> VFD AI1) ----------
+uint32_t strNow = 0;              // % for the next / current push
+bool     strAttached = false;
+
+void writeStrength() {            // attach/detach as useStr says, then write strNow
+  if (!cfg.useStr) {
+    if (strAttached) { ledcDetach(PIN_STRENGTH); strAttached = false; }
+    pinMode(PIN_STRENGTH, INPUT);  // untouched: pad floats on its pull-up
+    return;
+  }
+  if (!strAttached) { ledcAttach(PIN_STRENGTH, STR_FREQ, STR_BITS); strAttached = true; }
+  const uint32_t full = (1u << STR_BITS) - 1;
+  uint32_t duty = full * strNow / 100;
+  ledcWrite(PIN_STRENGTH, cfg.strInv ? full - duty : duty);
+}
+
+void drawStrength() {             // new random strength, set well before the push
+  strNow = randRange(cfg.strMin, cfg.strMax);
+  writeStrength();
+}
+
 inline bool reached(uint32_t now, uint32_t t) { return (int32_t)(now - t) >= 0; }
 inline bool blink(uint32_t now, uint32_t period) { return (now / (period / 2)) & 1; }
 
@@ -197,6 +238,9 @@ void clampConfig(Config &c) {
   clamp(c.useVfdOk, 0, 1);         clamp(c.okResume, 500, 600000);
   clamp(c.useRun, 0, 1);           clamp(c.useBtn, 0, 1);
   clamp(c.autostart, 0, 1);
+  clamp(c.motorMa, 0, 50000);      clamp(c.useStr, 0, 1);  clamp(c.strInv, 0, 1);
+  clamp(c.strMin, 0, 100);         clamp(c.strMax, 0, 100);
+  if (c.strMax < c.strMin) std::swap(c.strMin, c.strMax);
   clamp(c.softKicks, 0, 50);
   clamp(c.hangEveryMax, 60000, 86400000); clamp(c.hangTimeMax, 0, 3600000);
   clamp(c.warnMs, 0, 10000);
@@ -222,7 +266,8 @@ void loadConfig() {
   if (ver == CFG_VERSION && len == sizeof(Config)) {
     prefs.getBytes("cfg", &cfg, sizeof(Config));
   } else if ((ver == 1 && len == CFG_V1_SIZE) || (ver == 2 && len == CFG_V2_SIZE) ||
-             (ver == 3 && len == CFG_V3_SIZE) || (ver == 4 && len == CFG_V4_SIZE)) {
+             (ver == 3 && len == CFG_V3_SIZE) || (ver == 4 && len == CFG_V4_SIZE) ||
+             (ver == 5 && len == CFG_V5_SIZE)) {
     // keep tuned settings; fields added later keep their DEFAULTS
     prefs.getBytes("cfg", &cfg, len);
     if (ver < 3) {                     // pause ranges start as the old fixed values
@@ -243,6 +288,7 @@ void startPiece() {
   running = true;
   inPause = false;
   kicksSinceStart = 0;
+  drawStrength();
   setMove(false);
   setBrakeReleased(true);
   phase = RELEASING;
@@ -269,6 +315,7 @@ void startKick(uint32_t now) {
   kicksSinceStart++;
   lastDrop = randRange(cfg.dropMin, cfg.dropMax);
   lastSpin = kickLen;
+  lastStr  = cfg.useStr ? (int32_t)strNow : -1;
   kickStart = now;
   nextKick  = now + lastDrop;      // measured from kick start, as original
   inPause = false;
@@ -305,6 +352,7 @@ void tickPiece(uint32_t now) {
       if (now - kickStart >= kickLen) {
         setMove(false);
         phase = WAITING;
+        drawStrength();             // next push's strength, settles during the rest
       }
       break;
     case ENGAGING:
@@ -421,17 +469,19 @@ void sendJson(const String &s) {
 }
 
 String configJson() {
-  char b[600];
+  char b[900];
   snprintf(b, sizeof b,
     "{\"spinMin\":%lu,\"spinMax\":%lu,\"dropMin\":%lu,\"dropMax\":%lu,"
     "\"hangEvery\":%lu,\"hangTime\":%lu,\"brakeRelease\":%lu,\"brakeEngage\":%lu,"
     "\"ledPct\":%lu,\"apMinutes\":%lu,"
     "\"useVfdOk\":%lu,\"okResume\":%lu,\"useRun\":%lu,\"useBtn\":%lu,\"softKicks\":%lu,"
-    "\"hangEveryMax\":%lu,\"hangTimeMax\":%lu,\"warnMs\":%lu,\"autostart\":%lu,\"rev\":%lu}",
+    "\"hangEveryMax\":%lu,\"hangTimeMax\":%lu,\"warnMs\":%lu,\"autostart\":%lu,"
+    "\"motorMa\":%lu,\"useStr\":%lu,\"strInv\":%lu,\"strMin\":%lu,\"strMax\":%lu,\"rev\":%lu}",
     cfg.spinMin, cfg.spinMax, cfg.dropMin, cfg.dropMax, cfg.hangEvery, cfg.hangTime,
     cfg.brakeRelease, cfg.brakeEngage, cfg.ledPct, cfg.apMinutes,
     cfg.useVfdOk, cfg.okResume, cfg.useRun, cfg.useBtn, cfg.softKicks,
-    cfg.hangEveryMax, cfg.hangTimeMax, cfg.warnMs, cfg.autostart, cfgRev);
+    cfg.hangEveryMax, cfg.hangTimeMax, cfg.warnMs, cfg.autostart,
+    cfg.motorMa, cfg.useStr, cfg.strInv, cfg.strMin, cfg.strMax, cfgRev);
   return String(b);
 }
 
@@ -441,13 +491,13 @@ String statusJson() {
   long pauseIn    = (running && cfg.hangEvery && phase != RELEASING) ? (long)(int32_t)(hangoutAt - now) : -1;
   long apOffIn    = (apOn && cfg.apMinutes) ? max(0L, (long)cfg.apMinutes * 60000L - (long)(now - apSince)) : -1;
   const char *ph  = (phase == WAITING && inPause) ? "pause" : PHASE_NAMES[phase];
-  char b[800];
+  char b[1100];
   snprintf(b, sizeof b,
     "{\"fw\":\"%s\",\"running\":%s,\"userRun\":%s,\"hold\":\"%s\",\"phase\":\"%s\",\"brake\":%s,\"move\":%s,"
     "\"uptime\":%lu,\"boots\":%lu,\"kicks\":%lu,\"pauses\":%lu,\"lastSpin\":%lu,\"lastDrop\":%lu,"
     "\"nextKickIn\":%ld,\"pauseIn\":%ld,\"apOffIn\":%ld,\"clients\":%d,\"heap\":%lu,"
     "\"vfdOk\":%s,\"runSw\":%s,\"btn\":%s,\"faults\":%lu,\"ao\":%.2f,\"aoPeak\":%.2f,\"aoAvg\":%.2f,"
-    "\"dirty\":%s,\"hangTime\":%lu,\"warn\":%s,\"rev\":%lu}",
+    "\"dirty\":%s,\"hangTime\":%lu,\"warn\":%s,\"str\":%ld,\"lastStr\":%ld,\"rev\":%lu}",
     FW_VERSION, running ? "true" : "false", userRun ? "true" : "false",
     running ? "" : holdReason(), ph,
     brakeReleased ? "\"released\"" : "\"engaged\"", moveOn ? "true" : "false",
@@ -456,7 +506,8 @@ String statusJson() {
     (unsigned long)ESP.getFreeHeap(),
     inVfdOk.state ? "true" : "false", inRun.state ? "true" : "false", inBtn.state ? "true" : "false",
     vfdFaults, aoV, aoLastPeak, aoAvgPeak,
-    configDirty() ? "true" : "false", lastPause, moveWarning(now) ? "true" : "false", cfgRev);
+    configDirty() ? "true" : "false", lastPause, moveWarning(now) ? "true" : "false",
+    cfg.useStr ? (long)strNow : -1L, (long)lastStr, cfgRev);
   return String(b);
 }
 
@@ -477,6 +528,8 @@ Config configFromArgs() {
   rd("hangEveryMax", c.hangEveryMax); rd("hangTimeMax", c.hangTimeMax);
   rd("warnMs", c.warnMs);
   rd("autostart", c.autostart);
+  rd("motorMa", c.motorMa);   rd("useStr", c.useStr);   rd("strInv", c.strInv);
+  rd("strMin", c.strMin);     rd("strMax", c.strMax);
   clampConfig(c);
   return c;
 }
@@ -497,6 +550,11 @@ void applyConfig(const Config &c) {
   }
   setBrakeReleased(brakeReleased);   // refresh LED brightness
   setMove(moveOn);
+  if (cfg.useStr != old.useStr || cfg.strInv != old.strInv ||
+      cfg.strMin != old.strMin || cfg.strMax != old.strMax) {
+    if (moveOn) writeStrength();     // mid-push: keep this push's value
+    else drawStrength();
+  }
   tickInputs(now);                   // apply option changes at once
 }
 
@@ -616,6 +674,7 @@ void setup() {
   prefs.putUInt("boots", bootCount);
   loadConfig();
   safeOutputs();
+  drawStrength();                                  // no-op unless the strength output is on
   Serial.printf("\nUNTITLED fw %s, boot #%lu | VFD_OK %s, autostart %s, soft %lu\n",
                 FW_VERSION, bootCount, cfg.useVfdOk ? "on" : "off",
                 cfg.autostart ? "on" : "off", cfg.softKicks);
