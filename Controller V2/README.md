@@ -36,8 +36,8 @@ Safe default: brake engaged, VFD disabled until firmware commands otherwise.
 | 2 | GND | IRM 5 V − |
 | 3 | 24V+ | IRM 24 V + |
 | 4 | 24V− | IRM 24 V − |
-| 5 | BRAKE+ | Brake plug pin 1 |
-| 6 | BRAKE− (= 24V−) | Brake plug pin 2 |
+| 5 | BRAKE+ | Brake M12 socket pin 1 (brown) |
+| 6 | BRAKE− (= 24V−) | Brake M12 socket pin 3 (blue); pins 2, 4 not connected |
 | 7 | VFD_24V | VFD +24 V out (K2 common) |
 | 8 | VFD_DI1 | VFD DI1 run input |
 | 9 | VFD_OK_IN | VFD relay out ("drive OK") |
