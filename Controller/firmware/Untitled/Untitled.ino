@@ -1,7 +1,7 @@
 /*
 ------------------------------------------------------------
 UNTITLED – Controller firmware (XIAO ESP32C3)
-Version 1.5.3  (2026-10-15)  – keep in step with FW_VERSION below
+Version 1.5.4  (2026-10-15)  – keep in step with FW_VERSION below
 
 Artist:          Kitty Kraus
 Original code:   Roman Zulek (Arduino)
@@ -48,7 +48,7 @@ Strength output (1.5.0, /tech, OFF by default):
 Always active (indication only, cannot stop the piece):
   LED_VFD_OK  on = drive OK, breathing = not OK / not connected (stopped),
               2 Hz blink = not OK while the piece should run
-  LED_VFD_OK  runs at VFD_LED_PCT (80 %) of the LED brightness setting
+  LED_VFD_OK  runs at VFD_LED_PCT (60 %) of the LED brightness setting
   LED_MOVE    solid = push, speeding-up blink = warning, slow breathing = running, off = stopped
   LED_SYS     Wi-Fi: on while the AP is up, off when Wi-Fi is off, fast blink during OTA
   VFD AO      live VersiDrive analog output + peak per kick on the web page
@@ -66,7 +66,7 @@ Board: XIAO_ESP32C3 (esp32 core 3.x).
 #include "page.h"     // technician page  /tech
 #include "artist.h"   // artist page      /
 
-#define FW_VERSION "1.5.3"
+#define FW_VERSION "1.5.4"
 
 // --- Pins (named after the schematic nets) ---
 constexpr uint8_t PIN_K1_GATE    = D10; // GPIO10 net K1_GATE   -> Q1 -> K1 : brake coil  (HIGH = brake released)
@@ -87,7 +87,7 @@ constexpr uint8_t  STR_BITS      = 10;
 constexpr float    AO_SCALE      = 7.8f;  // V at VFD terminal 8 = V at pin * 7.8
 constexpr uint32_t AO_TAIL_MS    = 1500;  // keep tracking the peak this long after a kick ends
 constexpr uint32_t RUN_HOLD_MS   = 2000;  // hold RUN this long to start
-constexpr uint32_t VFD_LED_PCT   = 80;    // amber VFD LED at 80 % of the LED brightness setting
+constexpr uint32_t VFD_LED_PCT   = 60;    // amber VFD LED at 60 % of the LED brightness setting
 
 // --- Wi-Fi ---
 const char *AP_SSID  = "KK-Untitled";
@@ -462,7 +462,7 @@ void tickIndicators(uint32_t now) {
   if (inVfdOk.state)  vDuty = ledDuty();
   else if (userRun)   vDuty = blink(now, 500) ? ledDuty() : 0;
   else                vDuty = breathe(now, 3000);
-  ledcWrite(PIN_LED_VFD_OK, vDuty * VFD_LED_PCT / 100);   // amber at 80 % to match the others
+  ledcWrite(PIN_LED_VFD_OK, vDuty * VFD_LED_PCT / 100);   // amber dimmed to match the green
   // System LED (active low) = Wi-Fi indicator: on while the AP is up, fast blink during OTA
   bool sOn = otaActive ? blink(now, 100) : apOn;
   ledcWrite(PIN_LED_SYS, sOn ? 255 - ledDuty() : 255);
