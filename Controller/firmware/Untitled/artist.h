@@ -83,7 +83,7 @@ foot a{color:var(--dim);font-size:14px}
 <script>
 const T={
 en:{pushing:'Pushing',warn:'About to push',resting:'Resting',pause:'Long pause',starting:'Starting',stopping:'Stopping',stopped:'Stopped',
- waitVfd:'Waiting · drive fault',waitRun:'Waiting · switch off',offline:'Not connected',
+ waitVfd:'Waiting · drive fault',offline:'Not connected',
  nextIn:'Next push in ',start:'Start',stop:'Stop',pushNow:'Push now',
  push:'Push strength',pushD:'Each push is random between min and max. A longer push is a harder push and swings higher.',
  pushL:'Push length',pushLD:'How long the motor pushes each time, random between min and max.',
@@ -95,7 +95,7 @@ en:{pushing:'Pushing',warn:'About to push',resting:'Resting',pause:'Long pause',
  wifiOff:'Wi-Fi turns off in ',wifiConn:'Wi-Fi turns off when you disconnect',wifiAlways:'Wi-Fi always on',wifiStay:'Reset to 15 min',wifiReset:'Wi-Fi timer reset',
  tech:'Advanced settings'},
 de:{pushing:'Schub',warn:'Gleich geht’s los',resting:'Ruhe',pause:'Lange Pause',starting:'Startet',stopping:'Stoppt',stopped:'Gestoppt',
- waitVfd:'Wartet · Störung Antrieb',waitRun:'Wartet · Schalter aus',offline:'Keine Verbindung',
+ waitVfd:'Wartet · Störung Antrieb',offline:'Keine Verbindung',
  nextIn:'Nächster Schub in ',start:'Start',stop:'Stopp',pushNow:'Jetzt schieben',
  push:'Schubstärke',pushD:'Jeder Schub zufällig zwischen Min und Max. Ein längerer Schub ist ein stärkerer Schub und schwingt höher.',
  pushL:'Schubdauer',pushLD:'Wie lange der Motor jeweils schiebt, zufällig zwischen Min und Max.',
@@ -184,7 +184,7 @@ function show(s){
  st=s;let now,next='';
  const P={'kick':'pushing','resting':'resting','pause':'pause','releasing brake':'starting','engaging brake':'stopping','stopped':'stopped'};
  now=t(s.warn?'warn':(P[s.phase]||'stopped'));
- if(!s.running&&s.userRun)now=s.hold=='VFD fault'?t('waitVfd'):s.hold=='RUN switch open'?t('waitRun'):now;
+ if(!s.running&&s.userRun)now=s.hold=='VFD fault'?t('waitVfd'):now;
  const bar=$('bar'),bi=$('barI');
  bar.classList.toggle('push',s.phase=='kick');
  if(s.nextKickIn>=0){next=t('nextIn')+fmt(s.nextKickIn);

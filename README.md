@@ -21,12 +21,12 @@ Controller: [Controller V2](Controller%20V2/README.md) (current board) · [firmw
 Diagram
 
 
-## 3. Motor Driver
+## 2. Motor Driver
 
 Diagram
 
 
-## 5. Control
+## 3. Control
 
 Diagram
 

@@ -93,8 +93,8 @@ const O=[
  ['autostart','Autostart after power-up','on',1,'off = hold RUN 2 s or press Start'],
  ['softKicks','Soft start kicks','kicks',1,'50→100 %, 0 = off'],
  ['motorMa','Motor rated current (VFD P-08)','A',1000,'for the A readout, needs VFD P-25 = 9'],
- ['useStr','Strength output','on',1,'GPIO9 → 0–10 V module → VFD AI1 (T6)'],
- ['strInv','Strength output active low','on',1,'DIN+ → 3.3 V, DIN− → GPIO9'],
+ ['useStr','Strength output','on',1,'GPIO9 → GP8101S (0–10 V) → VFD AI1 (T6)'],
+ ['strInv','Strength output inverted','on',1,'off for GP8101S; on only for opto modules (DIN− → GPIO9)'],
  ['strMin','Strength min','%',1,'of 0–10 V, random per push'],['strMax','Strength max','%',1,'']];
 const A=F.concat(O);
 const $=id=>document.getElementById(id);

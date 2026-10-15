@@ -14,7 +14,7 @@ Safe default: brake engaged, VFD disabled until firmware commands otherwise.
 
 | XIAO | GPIO | Net | Function |
 |---|---|---|---|
-| D0 | 2 | BTN_SIG | Wi-Fi / test button (R11 pull-up, strapping pin) |
+| D0 | 2 | BTN_SIG | Wi-Fi button (R11 pull-up, strapping pin) |
 | D1 | 3 | VFD_AO_SIG | VFD analog out via 68k/10k divider (V at VFD = mV × 7.8 / 1000) |
 | D2 | 4 | RUN_SIG | RUN button |
 | D3 | 5 | LED_VFD_OK | VFD status LED (onboard + panel) |
@@ -22,8 +22,8 @@ Safe default: brake engaged, VFD disabled until firmware commands otherwise.
 | D5 | 7 | LED_BRAKE | Brake release LED (onboard + panel) |
 | D6 | 21 | LED_MOVE | Motor impulse LED (onboard + panel) |
 | D7 | 20 | K2_GATE | Q2 → K2 motor/VFD run relay |
-| D8 | 8 | LED_SYS | System status LED, active low (strapping pin) |
-| D9 | 9 | PIN_9 | Test pad (BOOT strapping pin). Optional strength PWM → 0–10 V module → VFD AI1, active low |
+| D8 | 8 | LED_SYS | Wi-Fi (system) LED, active low (strapping pin) |
+| D9 | 9 | PIN_9 | Test pad (BOOT strapping pin). Optional strength PWM → GP8101S → VFD AI1 |
 | D10 | 10 | K1_GATE | Q1 → K1 brake relay |
 
 ## Connectors (Phoenix MCV 1.5 3.81 mm)
@@ -47,18 +47,20 @@ Safe default: brake engaged, VFD disabled until firmware commands otherwise.
 
 **PANEL** — 10-pin 1803507, plug MC 1.5/10-ST-3.81
 
+Board silkscreen: RUN_IN, GND, BTN_IN, GND, BRAKE, MOVE, VFD_OK, GND, SYS+, SYS-.
+
 | Pin | Net | Goes to |
 |---|---|---|
 | 1 | RUN_IN | RUN button |
 | 2 | GND | RUN button |
-| 3 | BTN_IN | Wi-Fi / test button |
+| 3 | BTN_IN | Wi-Fi button |
 | 4 | GND | button |
-| 5 | PLED_BRAKE | Brake LED + |
-| 6 | PLED_MOVE | Move LED + |
-| 7 | PLED_VFD_OK | VFD OK LED + |
+| 5 | PLED_BRAKE (BRAKE) | Green brake LED + |
+| 6 | PLED_MOVE (MOVE) | Red run/stop LED + |
+| 7 | PLED_VFD_OK (VFD_OK) | Amber VersiDrive LED + |
 | 8 | GND | Panel LED − (brake, move, VFD OK) |
-| 9 | PLED_SYS (SYS+) | System LED + |
-| 10 | LED_SYS (SYS−) | System LED − |
+| 9 | PLED_SYS (SYS+) | Blue Wi-Fi LED + |
+| 10 | LED_SYS (SYS−) | Blue Wi-Fi LED − |
 
 Panel LEDs have their series resistors on the board.
 
@@ -84,7 +86,9 @@ Upload from `OUTPUT/CAM 02`: Gerber zip + `Chaos Pendulum PCB_BOM.csv` + `Chaos 
 
 - `V2 BOM - JLC.csv`, `V2 BOM - hand solder.csv`, `V1 BOM.xls`
 - `OUTPUT/CAM 02/` — production files as ordered
-- `docs/V2 enclosure panels.svg` — enclosure panel layout (PANEL + MOTOR sides)
+- `docs/V2 enclosure panels.svg` — enclosure panel layout (PANEL + MOTOR sides), September concept
+- `docs/VFD cable labels.png`, `docs/VFD cable solder layout.png` — strand colours, labels, Quick-Lock solder side
+- `docs/* Niimbot.xlsx` — label sheets for the Niimbot app (VFD cable, brake cable, panel LED wires)
 - `docs/V2 option 1 - VFD analog feedback.svg` — VFD analog output wiring
 - Firmware: `../Controller/firmware/Untitled/` (pin map above)
 
@@ -120,7 +124,7 @@ Ground the shield at **one end only — the controller end**. VersiDrive manual,
 - Twist each input with its own GND: RUN_IN with pin 2, BTN_IN with pin 4.
 - BRAKE / MOVE / VFD_OK LED anodes on pins 5–7, all cathodes to GND pin 8.
 - SYS LED: anode to pin 9 (SYS+), cathode to pin 10 (SYS−) — not to GND.
-- Panel LEDs: bare 5 mm diffused LEDs, red/orange/yellow/yellow-green (Vf ≈ 2 V). Blue/white/true green are too dim on 3.3 V through 220 Ω.
+- Panel LEDs fitted: red (MOVE), amber (VFD_OK), green (BRAKE), blue (SYS). Blue and true green (Vf ≈ 3 V) run dimmer on 3.3 V through 220 Ω; raise LED brightness on `/tech`, or drop that resistor to ~56 Ω.
 - Route away from the IRM mains input and the 24 V brake wires; cross at right angles. Leave slack to unplug, label wires, cable-tie near the plug.
 
 ### USB with the IRMs connected

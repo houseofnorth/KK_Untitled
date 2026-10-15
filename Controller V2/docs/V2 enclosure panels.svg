@@ -21,14 +21,14 @@
     <circle cx="985" cy="205" r="18" fill="#444"/>
     <rect x="982" y="189" width="6" height="32" rx="2" fill="#ddd"/>
     <text x="985" y="258" font-size="14" font-weight="bold" text-anchor="middle">RUN</text>
-    <text x="985" y="274" font-size="11" fill="#555" text-anchor="middle">key / toggle, latching</text>
+    <text x="985" y="274" font-size="11" fill="#555" text-anchor="middle">momentary · hold 2 s to start</text>
     <circle cx="1100" cy="205" r="20" fill="#bbb" stroke="#333" stroke-width="2"/>
     <circle cx="1100" cy="205" r="12" fill="#666" stroke="#333"/>
-    <text x="1100" y="258" font-size="14" font-weight="bold" text-anchor="middle">WIFI / TEST</text>
+    <text x="1100" y="258" font-size="14" font-weight="bold" text-anchor="middle">WIFI</text>
     <text x="1100" y="274" font-size="11" fill="#555" text-anchor="middle">momentary, recessed</text>
     <circle cx="1100" cy="318" r="15" fill="#ccc" stroke="#333"/><circle cx="1100" cy="318" r="9" fill="#e6b800"/>
-    <text x="1100" y="352" font-size="12" font-weight="bold" text-anchor="middle">SYSTEM</text>
-    <text x="1100" y="366" font-size="10" fill="#555" text-anchor="middle">mirrors LED4</text>
+    <text x="1100" y="352" font-size="12" font-weight="bold" text-anchor="middle">WIFI LED</text>
+    <text x="1100" y="366" font-size="10" fill="#555" text-anchor="middle">blue · Wi-Fi on</text>
     <rect x="650" y="300" width="70" height="30" rx="8" fill="none" stroke="#777" stroke-dasharray="5 4" stroke-width="2"/>
     <rect x="668" y="310" width="34" height="10" rx="5" fill="#999"/>
     <text x="732" y="312" font-size="12" font-weight="bold">USB-C (optional)</text>
@@ -71,7 +71,7 @@
     </g>
     <g font-size="8" fill="#fff"><text x="306" y="219">1</text><text x="349" y="219">2</text><text x="356" y="249">3</text><text x="327" y="266">4</text><text x="301" y="249">5</text><text x="336" y="233">6</text></g>
     <text x="330" y="310" font-size="14" font-weight="bold" text-anchor="middle">VFD</text>
-    <text x="330" y="328" font-size="11" fill="#555" text-anchor="middle">GX16-6</text>
+    <text x="330" y="328" font-size="11" fill="#555" text-anchor="middle">Quick-Lock 6</text>
     <circle cx="475" cy="235" r="40" fill="#bbb" stroke="#333" stroke-width="2"/>
     <circle cx="475" cy="235" r="30" fill="#222"/>
     <rect x="471" y="200" width="8" height="8" fill="#bbb"/>
@@ -85,7 +85,7 @@
     <text x="40" y="428">L / N / PE → 2 × Mean Well IRM (24 V and 5 V), inside.</text>
     <text x="40" y="446" fill="#555">IRM outputs → MOTOR 1–4 (5V, GND, 24V+, 24V-).</text>
 
-    <text x="40" y="482" font-weight="bold">VFD  (GX16-6 → VersiDrive, multicore)</text>
+    <text x="40" y="482" font-weight="bold">VFD  (Quick-Lock 6-pole → VersiDrive, multicore)</text>
     <line x1="40" y1="490" x2="580" y2="490" stroke="#ccc"/>
     <text x="40" y="508">1</text><text x="70" y="508" font-family="Menlo, monospace">VFD_24V</text><text x="200" y="508">T1  +24V out</text><text x="420" y="508" fill="#555">MOTOR 7</text>
     <text x="40" y="526">2</text><text x="70" y="526" font-family="Menlo, monospace">VFD_DI1</text><text x="200" y="526">T2  DI1 run input (K2)</text><text x="420" y="526" fill="#555">MOTOR 8</text>
@@ -105,9 +105,9 @@
     <line x1="40" y1="768" x2="1160" y2="768" stroke="#ddd"/>
     <text x="40" y="790" font-weight="bold">Notes</text>
     <text x="40" y="810">• The VFD (6-pin) and BRAKE (2-pin) connectors have different pin counts, so their cables can't be swapped.</text>
-    <text x="40" y="828">• Panel LEDs: bare 5 mm LEDs in bezels (the board already has 220R). No 12/24 V indicators with built-in resistors. Red, green or yellow only.</text>
-    <text x="40" y="846">• RUN and WIFI are 3.3 V, low-current signals, so gold-contact or signal-rated switches work best. A key switch for RUN stops visitors switching it off.</text>
+    <text x="40" y="828">• Panel LEDs: bare 5 mm LEDs in bezels (the board already has 220R). No 12/24 V indicators with built-in resistors. Fitted: red MOVE, amber VFD_OK, green BRAKE, blue Wi-Fi.</text>
+    <text x="40" y="846">• RUN and WIFI are 3.3 V, low-current signals, so gold-contact or signal-rated switches work best. RUN is a momentary button: hold 2 s to start, press to stop.</text>
     <text x="40" y="864">• Keep mains wiring (inlet → IRM supplies) physically separated from the PCB and the signal-panel wiring.</text>
-    <text x="40" y="882">• VersiDrive: set P-25 so terminal 8 outputs motor speed or current (0–10 V). Check the values in the manual.</text>
+    <text x="40" y="882">• VersiDrive: P-25 = 9, terminal 8 outputs motor current (0–10 V = 0–200 % of P-08).</text>
   </g>
 </svg>

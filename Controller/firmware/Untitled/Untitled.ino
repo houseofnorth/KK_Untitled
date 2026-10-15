@@ -1,7 +1,7 @@
 /*
 ------------------------------------------------------------
 UNTITLED – Controller firmware (XIAO ESP32C3)
-Version 1.5.2  (2026-10-15)  – keep in step with FW_VERSION below
+Version 1.5.3  (2026-10-15)  – keep in step with FW_VERSION below
 
 Artist:          Kitty Kraus
 Original code:   Roman Zulek (Arduino)
@@ -20,7 +20,7 @@ Live changes apply at once; Save stores them, Undo returns to the saved state.
 AP turns off apMinutes after it starts (0 = always on),
 but not while a phone is connected.
 
-V2 options (1.1.0) – each switched on the web page, saved in flash, OFF by default:
+V2 options – switched on /tech, saved in flash (useVfdOk ON by default since 1.5.1, rest OFF):
   useVfdOk   VFD "drive OK" relay (VFD_OK_IN). Not OK -> move off, brake engaged.
              Resumes once OK has been stable for okResume ms. Also holds the
              piece after power-up until the drive reports ready.
@@ -37,16 +37,18 @@ Panel buttons (1.4.0, always active, momentary to GND):
   Web Start/Stop behave the same as the RUN button.
 
 Strength output (1.5.0, /tech, OFF by default):
-  useStr     PWM on GPIO9 (test pad) -> "3.3V PWM to 0-10V" module -> VFD AI1 (T6).
+  useStr     PWM on GPIO9 (test pad) -> DFRobot GP8101S (DFR1036) set to 0-10 V -> VFD AI1 (T6).
              Strength strMin..strMax % (random), drawn after each push so the
              module output settles during the rest. Off = GPIO9 left as input.
-  strInv     active low (default): DIN+ -> 3.3 V, DIN- -> GPIO9. Pad idles high,
-             so GPIO9 (strapping pin) stays high at boot.
+  strInv     OFF (default) for the GP8101S: module powered from XIAO 3V3, PWM pin straight
+             to GPIO9. ON only for opto-input modules wired DIN+ -> 3.3 V, DIN- -> GPIO9.
+             GPIO9 is a strapping pin: the module input must not pull it low at boot.
   motorMa    VFD P-08 rated current; with P-25 = 9 the AO reads A = V(T8) x 0.2 x P-08.
 
 Always active (indication only, cannot stop the piece):
   LED_VFD_OK  on = drive OK, breathing = not OK / not connected (stopped),
               2 Hz blink = not OK while the piece should run
+  LED_VFD_OK  runs at VFD_LED_PCT (80 %) of the LED brightness setting
   LED_MOVE    solid = push, speeding-up blink = warning, slow breathing = running, off = stopped
   LED_SYS     Wi-Fi: on while the AP is up, off when Wi-Fi is off, fast blink during OTA
   VFD AO      live VersiDrive analog output + peak per kick on the web page
@@ -64,7 +66,7 @@ Board: XIAO_ESP32C3 (esp32 core 3.x).
 #include "page.h"     // technician page  /tech
 #include "artist.h"   // artist page      /
 
-#define FW_VERSION "1.5.2"
+#define FW_VERSION "1.5.3"
 
 // --- Pins (named after the schematic nets) ---
 constexpr uint8_t PIN_K1_GATE    = D10; // GPIO10 net K1_GATE   -> Q1 -> K1 : brake coil  (HIGH = brake released)
@@ -125,8 +127,9 @@ const Config DEFAULTS = {200, 900, 10000, 45000, 600000, 60000, 1250, 1250, 50, 
                          600000, 60000,
                          3000,
                          0,
-                         0, 0, 1, 40, 100};
-constexpr uint32_t CFG_VERSION = 7;   // 7: same layout as 6, Stop on VFD fault now on by default
+                         0, 0, 0, 40, 100};
+constexpr uint32_t CFG_VERSION = 8;   // 7: Stop on VFD fault on by default · 8: strength output active high (GP8101S)
+constexpr size_t   CFG_V7_SIZE = 24 * sizeof(uint32_t);
 constexpr size_t   CFG_V6_SIZE = 24 * sizeof(uint32_t);
 constexpr size_t   CFG_V5_SIZE = 19 * sizeof(uint32_t);
 constexpr size_t   CFG_V1_SIZE = 10 * sizeof(uint32_t);
@@ -272,10 +275,12 @@ void loadConfig() {
     prefs.getBytes("cfg", &cfg, sizeof(Config));
   } else if ((ver == 1 && len == CFG_V1_SIZE) || (ver == 2 && len == CFG_V2_SIZE) ||
              (ver == 3 && len == CFG_V3_SIZE) || (ver == 4 && len == CFG_V4_SIZE) ||
-             (ver == 5 && len == CFG_V5_SIZE) || (ver == 6 && len == CFG_V6_SIZE)) {
+             (ver == 5 && len == CFG_V5_SIZE) || (ver == 6 && len == CFG_V6_SIZE) ||
+             (ver == 7 && len == CFG_V7_SIZE)) {
     // keep tuned settings; fields added later keep their DEFAULTS
     prefs.getBytes("cfg", &cfg, len);
     if (ver < 7) cfg.useVfdOk = 1;     // 1.5.1: Stop on VFD fault on by default
+    if (ver < 8) cfg.strInv = 0;       // 1.5.3: GP8101S takes the PWM active high
     if (ver < 3) {                     // pause ranges start as the old fixed values
       cfg.hangEveryMax = cfg.hangEvery ? cfg.hangEvery : DEFAULTS.hangEveryMax;
       cfg.hangTimeMax  = cfg.hangTime;
@@ -457,7 +462,7 @@ void tickIndicators(uint32_t now) {
   if (inVfdOk.state)  vDuty = ledDuty();
   else if (userRun)   vDuty = blink(now, 500) ? ledDuty() : 0;
   else                vDuty = breathe(now, 3000);
-  ledcWrite(PIN_LED_VFD_OK, vDuty * VFD_LED_PCT / 100);   // amber runs a bit brighter than the others
+  ledcWrite(PIN_LED_VFD_OK, vDuty * VFD_LED_PCT / 100);   // amber at 80 % to match the others
   // System LED (active low) = Wi-Fi indicator: on while the AP is up, fast blink during OTA
   bool sOn = otaActive ? blink(now, 100) : apOn;
   ledcWrite(PIN_LED_SYS, sOn ? 255 - ledDuty() : 255);
