@@ -45,14 +45,6 @@ progress{width:100%;height:10px}
  </div>
 </div>
 
-<div class="card"><h2>Settings</h2><form id="f"></form>
- <h2 style="margin-top:16px">V2 options</h2><form id="o"></form>
- <div class="btns" style="margin-top:10px">
-  <button class="pri" onclick="save()">Save</button>
-  <button onclick="defaults()">Defaults</button>
- </div>
-</div>
-
 <div class="card"><h2>Stats</h2>
  <div class="row"><span>Uptime</span><span id="up">&ndash;</span></div>
  <div class="row"><span>Kicks / pauses (since boot)</span><span id="kc">&ndash;</span></div>
@@ -69,6 +61,14 @@ progress{width:100%;height:10px}
  <div class="row"><span>Kick peak last / avg</span><span id="pk">&ndash;</span></div>
  <div class="row"><span>Strength next / last push</span><span id="sn">&ndash;</span></div>
  <div class="row"><span>VFD faults (since boot)</span><span id="vf">&ndash;</span></div>
+</div>
+
+<div class="card"><h2>Settings</h2><form id="f"></form>
+ <h2 style="margin-top:16px">V2 options</h2><form id="o"></form>
+ <div class="btns" style="margin-top:10px">
+  <button class="pri" onclick="save()">Save</button>
+  <button onclick="defaults()">Defaults</button>
+ </div>
 </div>
 
 <div class="card"><h2>Firmware update</h2>
