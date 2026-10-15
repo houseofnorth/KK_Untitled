@@ -64,7 +64,8 @@ progress{width:100%;height:10px}
 
 <div class="card"><h2>Settings</h2><form id="f"></form>
  <h2 style="margin-top:16px">V2 options</h2><form id="o"></form>
- <div style="margin-top:22px;padding:12px;border:1px dashed #555;border-radius:10px;opacity:.6">
+ <!-- Future features (V3, strength output): hidden until the GP8101S is fitted. Remove display:none to show. -->
+ <div id="future" style="display:none;margin-top:22px;padding:12px;border:1px dashed #555;border-radius:10px;opacity:.6">
   <h2 style="margin:0 0 4px">Future features · V3</h2>
   <div class="sub">Push strength output. Needs the GP8101S module on GPIO9 and VFD AI1 &ndash; not fitted. Leave off.</div>
   <form id="x"></form>

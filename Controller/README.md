@@ -18,7 +18,7 @@ V1 pin map (old board, for reference): K1 = D8, K2 = D7, LED red = D5, LED green
 - **RUN** (PANEL 1–2): stopped → hold 2 s, the Move LED warning blink starts (you can let go), then the first push. Short press does nothing. Starting or running → any press stops and brakes at once. Web Start/Stop works the same way.
 - **Wi-Fi** (PANEL 3–4): press turns the AP on, or restarts its 15 min timer. The System LED shows Wi-Fi status. Don't hold it during power-up (GPIO2 strapping pin — the board won't boot).
 
-## Panel LEDs (firmware 1.5.11)
+## Panel LEDs (firmware 1.5.12)
 
 | LED | Shows |
 |---|---|
@@ -38,7 +38,7 @@ The drive-OK input is a relay contact from MOTOR 9 (VFD_OK_IN) to MOTOR 10 (GND)
 ## Motor current and strength output (`/tech`)
 
 - **Motor current:** set VFD P-25 = 9 (AO = output current, 0–10 V = 0–200 % of P-08) and enter P-08 on `/tech`. The page then shows A = V(T8) × 0.2 × P-08 live and per push.
-- **Strength output — FUTURE FEATURE (V3), not fitted:** shown greyed under *Future features* on `/tech`, off by default. PWM on the GPIO9 test pad drives a DFRobot Gravity GP8101S (DFR1036, range switch on 0–10 V) into VFD AI1 (T6). Push strength is random between Strength min and max (% of 10 V), chosen after each push. The artist page then shows *Push length* and *Push strength* separately; with the output off, the push length slider is labelled *Push strength*.
+- **Strength output — FUTURE FEATURE (V3), not fitted:** hidden on `/tech` until fitted (remove `display:none` on `#future` in `page.h`), off by default. PWM on the GPIO9 test pad drives a DFRobot Gravity GP8101S (DFR1036, range switch on 0–10 V) into VFD AI1 (T6). Push strength is random between Strength min and max (% of 10 V), chosen after each push. The artist page then shows *Push length* and *Push strength* separately; with the output off, the push length slider is labelled *Push strength*.
   - Wiring: module + → XIAO 3V3, − → GND, PWM in → GPIO9 pad (bodge wire), VOUT → brown core → T6. *Strength output inverted* stays **off**. Free the brown core by jumpering T11 to T9 at the drive.
   - GPIO9 is a boot strapping pin: check the module input is above ~100 kΩ to GND before connecting, then confirm the board still boots.
   - Not usable with the LC-LM358-PWM2V (needs ≥ 4.5 V PWM).
