@@ -1,7 +1,7 @@
 /*
 ------------------------------------------------------------
 UNTITLED – Controller firmware (XIAO ESP32C3)
-Version 1.5.0  (2026-10-12)  – keep in step with FW_VERSION below
+Version 1.5.1  (2026-10-15)  – keep in step with FW_VERSION below
 
 Artist:          Kitty Kraus
 Original code:   Roman Zulek (Arduino)
@@ -45,7 +45,9 @@ Strength output (1.5.0, /tech, OFF by default):
   motorMa    VFD P-08 rated current; with P-25 = 9 the AO reads A = V(T8) x 0.2 x P-08.
 
 Always active (indication only, cannot stop the piece):
-  LED_VFD_OK  on = drive OK, off = not OK, fast blink = piece held by VFD fault
+  LED_VFD_OK  on = drive OK, breathing = not OK / not connected (stopped),
+              2 Hz blink = not OK while the piece should run
+  LED_MOVE    solid = push, speeding-up blink = warning, slow breathing = running, off = stopped
   LED_SYS     Wi-Fi: on while the AP is up, off when Wi-Fi is off, fast blink during OTA
   VFD AO      live VersiDrive analog output + peak per kick on the web page
 
@@ -62,7 +64,7 @@ Board: XIAO_ESP32C3 (esp32 core 3.x).
 #include "page.h"     // technician page  /tech
 #include "artist.h"   // artist page      /
 
-#define FW_VERSION "1.5.0"
+#define FW_VERSION "1.5.1"
 
 // --- Pins (named after the schematic nets) ---
 constexpr uint8_t PIN_K1_GATE    = D10; // GPIO10 net K1_GATE   -> Q1 -> K1 : brake coil  (HIGH = brake released)
@@ -118,12 +120,13 @@ struct Config {
   uint32_t strMin, strMax;            // % of 0-10 V, random per push
 };
 const Config DEFAULTS = {200, 900, 10000, 45000, 600000, 60000, 1250, 1250, 50, 15,
-                         0, 5000, 0, 0, 0,
+                         1, 5000, 0, 0, 0,
                          600000, 60000,
                          3000,
                          0,
                          0, 0, 1, 40, 100};
-constexpr uint32_t CFG_VERSION = 6;
+constexpr uint32_t CFG_VERSION = 7;   // 7: same layout as 6, Stop on VFD fault now on by default
+constexpr size_t   CFG_V6_SIZE = 24 * sizeof(uint32_t);
 constexpr size_t   CFG_V5_SIZE = 19 * sizeof(uint32_t);
 constexpr size_t   CFG_V1_SIZE = 10 * sizeof(uint32_t);
 constexpr size_t   CFG_V2_SIZE = 15 * sizeof(uint32_t);
@@ -268,9 +271,10 @@ void loadConfig() {
     prefs.getBytes("cfg", &cfg, sizeof(Config));
   } else if ((ver == 1 && len == CFG_V1_SIZE) || (ver == 2 && len == CFG_V2_SIZE) ||
              (ver == 3 && len == CFG_V3_SIZE) || (ver == 4 && len == CFG_V4_SIZE) ||
-             (ver == 5 && len == CFG_V5_SIZE)) {
+             (ver == 5 && len == CFG_V5_SIZE) || (ver == 6 && len == CFG_V6_SIZE)) {
     // keep tuned settings; fields added later keep their DEFAULTS
     prefs.getBytes("cfg", &cfg, len);
+    if (ver < 7) cfg.useVfdOk = 1;     // 1.5.1: Stop on VFD fault on by default
     if (ver < 3) {                     // pause ranges start as the old fixed values
       cfg.hangEveryMax = cfg.hangEvery ? cfg.hangEvery : DEFAULTS.hangEveryMax;
       cfg.hangTimeMax  = cfg.hangTime;
@@ -438,29 +442,45 @@ bool moveWarning(uint32_t now) {
          (int32_t)(nextKick - now) <= (int32_t)cfg.warnMs;
 }
 
+// Slow breathing: 10 % .. 100 % of the LED brightness setting, cosine fade
+uint32_t breathe(uint32_t now, uint32_t period) {
+  float x = 0.5f - 0.5f * cosf(6.2831853f * (float)(now % period) / period);   // 0..1
+  float lvl = 0.10f + 0.90f * x * x;                                            // eased, perceptual
+  return (uint32_t)(ledDuty() * lvl);
+}
+
 void tickIndicators(uint32_t now) {
-  // VFD OK LED
-  bool vOn = (cfg.useVfdOk && faultActive && userRun) ? blink(now, 250) : inVfdOk.state;
-  ledcWrite(PIN_LED_VFD_OK, vOn ? ledDuty() : 0);
+  // VFD LED: on = drive OK, breathing = not OK / not connected while stopped,
+  //          2 Hz blink = not OK while the piece should run (fault)
+  uint32_t vDuty;
+  if (inVfdOk.state)  vDuty = ledDuty();
+  else if (userRun)   vDuty = blink(now, 500) ? ledDuty() : 0;
+  else                vDuty = breathe(now, 3000);
+  ledcWrite(PIN_LED_VFD_OK, vDuty);
   // System LED (active low) = Wi-Fi indicator: on while the AP is up, fast blink during OTA
   bool sOn = otaActive ? blink(now, 100) : apOn;
   ledcWrite(PIN_LED_SYS, sOn ? 255 - ledDuty() : 255);
 
-  // Move LED: solid while pushing; speeding-up blink during the warning before a push
+  // Move LED, highest first: solid while pushing; speeding-up blink during the
+  // warning before a push; slow breathing while running between pushes; off when stopped
   static uint32_t lastT = 0;
   uint32_t dt = now - lastT; lastT = now;
   bool warn = moveWarning(now);
   if (warn && !warnWas) warnPhase = 0;
   warnWas = warn;
-  bool mOn = moveOn;
-  if (!moveOn && warn) {
+  uint32_t mDuty = 0;
+  if (moveOn) {
+    mDuty = ledDuty();
+  } else if (warn) {
     float f = 1.0f - (float)(int32_t)(nextKick - now) / cfg.warnMs;   // 0 -> 1 over the warning
     if (f < 0) f = 0;
     float period = 700.0f - 620.0f * f;                               // 700 ms -> 80 ms
     warnPhase += dt / period;
-    mOn = (warnPhase - (int)warnPhase) < 0.5f;
+    mDuty = (warnPhase - (int)warnPhase) < 0.5f ? ledDuty() : 0;
+  } else if (running && !otaActive) {
+    mDuty = breathe(now, 3000);
   }
-  ledcWrite(PIN_LED_MOVE, mOn ? ledDuty() : 0);
+  ledcWrite(PIN_LED_MOVE, mDuty);
 }
 
 // ---------- Web ----------

@@ -18,6 +18,17 @@ V1 pin map (old board, for reference): K1 = D8, K2 = D7, LED red = D5, LED green
 - **RUN** (PANEL 1–2): stopped → hold 2 s, the Move LED warning blink starts (you can let go), then the first push. Short press does nothing. Starting or running → any press stops and brakes at once. Web Start/Stop works the same way.
 - **Wi-Fi** (PANEL 3–4): press turns the AP on, or restarts its 15 min timer. The System LED shows Wi-Fi status. Don't hold it during power-up (GPIO2 strapping pin — the board won't boot).
 
+## Panel LEDs (1.5.1)
+
+| LED | Shows |
+|---|---|
+| Red (MOVE) | solid = push · speeding-up blink = warning before a push · slow breathing = running, resting · off = stopped |
+| Amber (VFD_OK) | on = drive OK · breathing = drive not OK / not connected (stopped) · 2 Hz blink = drive not OK while the piece should run |
+| Green (BRAKE) | on = brake released |
+| Blue (SYS) | on = Wi-Fi up · fast blink = firmware update |
+
+Stop on VFD fault is on by default from 1.5.1 (also switched on when upgrading from older settings).
+
 ## Motor current and strength output (1.5.0, `/tech`)
 
 - **Motor current:** set VFD P-25 = 9 (AO = output current, 0–10 V = 0–200 % of P-08) and enter P-08 on `/tech`. The page then shows A = V(T8) × 0.2 × P-08 live and per push.
