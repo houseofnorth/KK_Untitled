@@ -1,7 +1,7 @@
 /*
 ------------------------------------------------------------
 UNTITLED – Controller firmware (XIAO ESP32C3)
-Version 1.6.0  (2026-10-15)  – keep in step with FW_VERSION below
+Version 1.6.1  (2026-10-15)  – keep in step with FW_VERSION below
 
 Artist:          Kitty Kraus
 Original code:   Roman Zulek (Arduino)
@@ -67,7 +67,7 @@ Board: XIAO_ESP32C3 (esp32 core 3.x).
 #include "page.h"     // technician page  /tech
 #include "artist.h"   // artist page      /
 
-#define FW_VERSION "1.6.0"
+#define FW_VERSION "1.6.1"
 
 // --- Pins (named after the schematic nets) ---
 constexpr uint8_t PIN_K1_GATE    = D10; // GPIO10 net K1_GATE   -> Q1 -> K1 : brake coil  (HIGH = brake released)
@@ -90,8 +90,8 @@ constexpr uint32_t AO_TAIL_MS    = 1500;  // keep tracking the peak this long af
 constexpr uint32_t RUN_HOLD_MS   = 2000;  // hold RUN this long to start
 
 // --- Wi-Fi ---
-const char *AP_SSID  = "KK-Untitled";
-const char *AP_PASS  = "untitled2026";   // min 8 chars
+const char *AP_SSID  = "Untitled";
+const char *AP_PASS  = "deltitnu";       // "untitled" backwards, min 8 chars
 const char *HOSTNAME = "untitled";       // http://untitled.local
 
 
