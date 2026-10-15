@@ -14,9 +14,9 @@ h1{font-size:17px;margin:4px 0 2px;letter-spacing:.14em}h2{font-size:13px;color:
 .row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #2a2a2c}.row:last-child{border:0}
 .row span:first-child{color:var(--dim)}
 .phase{font-size:26px;font-weight:600;text-transform:capitalize}
-.dots{display:flex;gap:16px;margin:10px 0 4px}.dot{display:flex;align-items:center;gap:6px;color:var(--dim);font-size:14px}
+.dots{display:flex;flex-wrap:wrap;gap:8px 16px;margin:10px 0 4px}.dot{display:flex;align-items:center;gap:6px;color:var(--dim);font-size:14px}
 .dot i{width:12px;height:12px;border-radius:0;background:#333;display:inline-block}
-.dot.on.b i{background:var(--red);box-shadow:0 0 8px var(--red)}.dot.on.m i{background:var(--grn);box-shadow:0 0 8px var(--grn)}
+.dot.on.b i{background:#2fb64a;box-shadow:0 0 8px #2fb64a}.dot.on.m i{background:#e5342b;box-shadow:0 0 8px #e5342b}.dot.on.v i{background:#f5a623;box-shadow:0 0 8px #f5a623}.dot.on.w i{background:#3b82f6;box-shadow:0 0 8px #3b82f6}
 #hold{color:var(--red);font-weight:600;min-height:0}
 .btns{display:flex;gap:8px;flex-wrap:wrap}
 button{flex:1;min-width:30%;border:0;border-radius:10px;padding:14px 8px;font-size:16px;font-weight:600;background:#2c2c2e;color:var(--fg)}
@@ -34,7 +34,7 @@ progress{width:100%;height:10px}
 <div class="card">
  <div class="phase" id="phase">&hellip;</div>
  <div class="sub" id="hold"></div>
- <div class="dots"><div class="dot b" id="dB"><i></i>Brake released</div><div class="dot m" id="dM"><i></i>Move</div></div>
+ <div class="dots"><div class="dot b" id="dB"><i></i>Brake released</div><div class="dot m" id="dM"><i></i>Motor</div><div class="dot v" id="dV"><i></i>VFD OK</div><div class="dot w" id="dW"><i></i>Wi-Fi enabled</div></div>
  <div class="row"><span>Next kick in</span><span id="nk">&ndash;</span></div>
  <div class="row"><span>Next pause in</span><span id="np">&ndash;</span></div>
  <div class="row"><span>Last kick / rest</span><span id="lk">&ndash;</span></div>
@@ -119,7 +119,7 @@ async function reboot(){if(!confirm('Reboot controller?'))return;await fetch('/a
 function show(s){
  if(s.rev!==undefined&&s.rev!=rev)load();
  $('fw').textContent='v'+s.fw;$('phase').textContent=s.phase;
- $('dB').classList.toggle('on',s.brake=='released');$('dM').classList.toggle('on',s.move);
+ $('dB').classList.toggle('on',s.brake=='released');$('dM').classList.toggle('on',s.move);$('dV').classList.toggle('on',s.vfdOk);$('dW').classList.add('on');
  $('nk').textContent=fmt(s.nextKickIn);$('np').textContent=fmt(s.pauseIn);
  $('lk').textContent=s.kicks?s.lastSpin+' ms / '+fmt(s.lastDrop):'–';
  $('up').textContent=fmt(s.uptime*1000);$('kc').textContent=s.kicks+' / '+s.pauses;$('bt').textContent=s.boots;
