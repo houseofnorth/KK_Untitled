@@ -1,7 +1,7 @@
 /*
 ------------------------------------------------------------
 UNTITLED – Controller firmware (XIAO ESP32C3)
-Version 1.5.10 (2026-10-15)  – keep in step with FW_VERSION below
+Version 1.5.11 (2026-10-15)  – keep in step with FW_VERSION below
 
 Artist:          Kitty Kraus
 Original code:   Roman Zulek (Arduino)
@@ -48,7 +48,7 @@ Strength output – FUTURE FEATURE (V3), not fitted. /tech "Future features", OF
 Always active (indication only, cannot stop the piece):
   LED_VFD_OK  on = drive OK, breathing = not OK / not connected (stopped),
               2 Hz blink = not OK while the piece should run
-  LED_VFD_OK  runs at VFD_LED_PCT (60 %) of the LED brightness setting
+  LED_VFD_OK  runs at vfdLedPct (TEMPORARY /tech setting, default 60 %) of the LED brightness
   LED_MOVE    solid = push, speeding-up blink = warning, slow breathing = running, off = stopped
   LED_SYS     Wi-Fi: on while the AP is up, off when Wi-Fi is off, fast blink during OTA
   VFD AO      live VersiDrive analog output + peak per kick on the web page
@@ -66,7 +66,7 @@ Board: XIAO_ESP32C3 (esp32 core 3.x).
 #include "page.h"     // technician page  /tech
 #include "artist.h"   // artist page      /
 
-#define FW_VERSION "1.5.10"
+#define FW_VERSION "1.5.11"
 
 // --- Pins (named after the schematic nets) ---
 constexpr uint8_t PIN_K1_GATE    = D10; // GPIO10 net K1_GATE   -> Q1 -> K1 : brake coil  (HIGH = brake released)
@@ -87,7 +87,6 @@ constexpr uint8_t  STR_BITS      = 10;
 constexpr float    AO_SCALE      = 7.8f;  // V at VFD terminal 8 = V at pin * 7.8
 constexpr uint32_t AO_TAIL_MS    = 1500;  // keep tracking the peak this long after a kick ends
 constexpr uint32_t RUN_HOLD_MS   = 2000;  // hold RUN this long to start
-constexpr uint32_t VFD_LED_PCT   = 60;    // amber VFD LED at 60 % of the LED brightness setting
 
 // --- Wi-Fi ---
 const char *AP_SSID  = "KK-Untitled";
@@ -121,14 +120,19 @@ struct Config {
   uint32_t useStr;                    // 0/1 strength PWM on GPIO9
   uint32_t strInv;                    // 1 = active low (DIN+ -> 3.3 V, DIN- -> GPIO9)
   uint32_t strMin, strMax;            // % of 0-10 V, random per push
+  // --- added in CFG_VERSION 9 (TEMPORARY, for tuning; hardcode later) ---
+  uint32_t vfdLedPct;                 // amber VFD LED level, % of ledPct
 };
 const Config DEFAULTS = {200, 900, 10000, 45000, 600000, 60000, 1250, 1250, 50, 15,
                          1, 5000, 0, 0, 0,
                          600000, 60000,
                          3000,
                          0,
-                         0, 0, 0, 40, 100};
-constexpr uint32_t CFG_VERSION = 8;   // 7: Stop on VFD fault on by default · 8: strength output active high (GP8101S)
+                         0, 0, 0, 40, 100,
+                         60};
+constexpr uint32_t CFG_VERSION = 9;   // 9: + vfdLedPct (temporary)
+constexpr size_t   CFG_V8_SIZE = 24 * sizeof(uint32_t);
+// 7: Stop on VFD fault on by default · 8: strength output active high (GP8101S)
 constexpr size_t   CFG_V7_SIZE = 24 * sizeof(uint32_t);
 constexpr size_t   CFG_V6_SIZE = 24 * sizeof(uint32_t);
 constexpr size_t   CFG_V5_SIZE = 19 * sizeof(uint32_t);
@@ -248,6 +252,7 @@ void clampConfig(Config &c) {
   clamp(c.autostart, 0, 1);
   clamp(c.motorMa, 0, 50000);      clamp(c.useStr, 0, 1);  clamp(c.strInv, 0, 1);
   clamp(c.strMin, 0, 100);         clamp(c.strMax, 0, 100);
+  clamp(c.vfdLedPct, 0, 100);
   if (c.strMax < c.strMin) std::swap(c.strMin, c.strMax);
   clamp(c.softKicks, 0, 50);
   clamp(c.hangEveryMax, 60000, 86400000); clamp(c.hangTimeMax, 0, 3600000);
@@ -276,7 +281,7 @@ void loadConfig() {
   } else if ((ver == 1 && len == CFG_V1_SIZE) || (ver == 2 && len == CFG_V2_SIZE) ||
              (ver == 3 && len == CFG_V3_SIZE) || (ver == 4 && len == CFG_V4_SIZE) ||
              (ver == 5 && len == CFG_V5_SIZE) || (ver == 6 && len == CFG_V6_SIZE) ||
-             (ver == 7 && len == CFG_V7_SIZE)) {
+             (ver == 7 && len == CFG_V7_SIZE) || (ver == 8 && len == CFG_V8_SIZE)) {
     // keep tuned settings; fields added later keep their DEFAULTS
     prefs.getBytes("cfg", &cfg, len);
     if (ver < 7) cfg.useVfdOk = 1;     // 1.5.1: Stop on VFD fault on by default
@@ -469,7 +474,7 @@ void tickIndicators(uint32_t now) {
   if (inVfdOk.state)  vDuty = ledDuty();
   else if (userRun)   vDuty = blink(now, 500) ? ledDuty() : 0;
   else                vDuty = breathe(now, 3000, vbStart);
-  ledcWrite(PIN_LED_VFD_OK, vDuty * VFD_LED_PCT / 100);   // amber dimmed to match the green
+  ledcWrite(PIN_LED_VFD_OK, vDuty * cfg.vfdLedPct / 100);   // amber dimmed to match the green
   // System LED (active low) = Wi-Fi indicator: on while the AP is up, fast blink during OTA
   bool sOn = otaActive ? blink(now, 100) : apOn;
   ledcWrite(PIN_LED_SYS, sOn ? 255 - ledDuty() : 255);
@@ -515,12 +520,12 @@ String configJson() {
     "\"ledPct\":%lu,\"apMinutes\":%lu,"
     "\"useVfdOk\":%lu,\"okResume\":%lu,\"useRun\":%lu,\"useBtn\":%lu,\"softKicks\":%lu,"
     "\"hangEveryMax\":%lu,\"hangTimeMax\":%lu,\"warnMs\":%lu,\"autostart\":%lu,"
-    "\"motorMa\":%lu,\"useStr\":%lu,\"strInv\":%lu,\"strMin\":%lu,\"strMax\":%lu,\"rev\":%lu}",
+    "\"motorMa\":%lu,\"useStr\":%lu,\"strInv\":%lu,\"strMin\":%lu,\"strMax\":%lu,\"vfdLedPct\":%lu,\"rev\":%lu}",
     cfg.spinMin, cfg.spinMax, cfg.dropMin, cfg.dropMax, cfg.hangEvery, cfg.hangTime,
     cfg.brakeRelease, cfg.brakeEngage, cfg.ledPct, cfg.apMinutes,
     cfg.useVfdOk, cfg.okResume, cfg.useRun, cfg.useBtn, cfg.softKicks,
     cfg.hangEveryMax, cfg.hangTimeMax, cfg.warnMs, cfg.autostart,
-    cfg.motorMa, cfg.useStr, cfg.strInv, cfg.strMin, cfg.strMax, cfgRev);
+    cfg.motorMa, cfg.useStr, cfg.strInv, cfg.strMin, cfg.strMax, cfg.vfdLedPct, cfgRev);
   return String(b);
 }
 
@@ -569,6 +574,7 @@ Config configFromArgs() {
   rd("autostart", c.autostart);
   rd("motorMa", c.motorMa);   rd("useStr", c.useStr);   rd("strInv", c.strInv);
   rd("strMin", c.strMin);     rd("strMax", c.strMax);
+  rd("vfdLedPct", c.vfdLedPct);
   clampConfig(c);
   return c;
 }

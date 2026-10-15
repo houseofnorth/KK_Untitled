@@ -98,6 +98,7 @@ const O=[
  ['autostart','Autostart after power-up','on',1,'off = hold RUN 2 s or press Start'],
  ['softKicks','Soft start kicks','kicks',1,'50→100 %, 0 = off'],
  ['motorMa','Motor rated current (VFD P-08)','A',1000,'for the A readout, needs VFD P-25 = 9'],
+ ['vfdLedPct','Amber LED level (temporary)','%',1,'of LED brightness · tuning only, removed later'],
  ];
 const X=[
  ['useStr','Strength output','on',1,'GPIO9 → GP8101S (0–10 V) → VFD AI1 (T6)'],
