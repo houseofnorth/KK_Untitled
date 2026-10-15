@@ -78,7 +78,7 @@ progress{width:100%;height:10px}
 </div>
 
 <div class="card"><h2>Firmware update</h2>
- <div class="sub">Upload <b>Untitled.ino.bin</b> (not merged.bin). The piece stops during update and stays stopped after the restart (unless Autostart is on).</div>
+ <div class="sub">Upload <b>Untitled.ino.bin</b> (not merged.bin). The piece stops during the update and starts again after the restart if Autostart is on.</div>
  <input type="file" id="bin" accept=".bin">
  <progress id="pr" value="0" max="100"></progress>
  <div class="btns" style="margin-top:10px"><button onclick="ota()">Upload</button><button onclick="reboot()">Reboot</button></div>
@@ -96,7 +96,7 @@ const F=[
  ['ledPct','LED brightness','%',1,''],['apMinutes','Wi-Fi on after boot','min',1,'0 = always on']];
 const O=[
  ['useVfdOk','Stop on VFD fault','on',1,'brake on until drive OK'],['okResume','Resume after drive OK for','s',1000,''],
- ['autostart','Autostart after power-up','on',1,'off = hold RUN 2 s or press Start'],
+ ['autostart','Autostart after power-up','on',1,'mains on starts the piece · untick for installation / maintenance'],
  ['softKicks','Soft start kicks','kicks',1,'50→100 %, 0 = off'],
  ['motorMa','Motor rated current (VFD P-08)','A',1000,'for the A readout, needs VFD P-25 = 9'],
  ['vfdLedPct','Amber LED level (temporary)','%',1,'of LED brightness · tuning only, removed later'],

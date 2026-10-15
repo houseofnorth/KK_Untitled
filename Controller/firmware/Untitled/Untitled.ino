@@ -1,7 +1,7 @@
 /*
 ------------------------------------------------------------
 UNTITLED – Controller firmware (XIAO ESP32C3)
-Version 1.5.12 (2026-10-15)  – keep in step with FW_VERSION below
+Version 1.6.0  (2026-10-15)  – keep in step with FW_VERSION below
 
 Artist:          Kitty Kraus
 Original code:   Roman Zulek (Arduino)
@@ -20,12 +20,13 @@ Live changes apply at once; Save stores them, Undo returns to the saved state.
 AP turns off apMinutes after it starts (0 = always on),
 but not while a phone is connected.
 
-V2 options – switched on /tech, saved in flash (useVfdOk ON by default since 1.5.1, rest OFF):
+V2 options – switched on /tech, saved in flash (useVfdOk and autostart ON by default, rest OFF):
   useVfdOk   VFD "drive OK" relay (VFD_OK_IN). Not OK -> move off, brake engaged.
              Resumes once OK has been stable for okResume ms. Also holds the
              piece after power-up until the drive reports ready.
-  autostart  Start on power-up (warning blink, then first push). Off = after a
-             power cut the piece stays stopped until RUN is held or Start is pressed.
+  autostart  ON by default (1.6.0): mains on starts the piece (warning blink, then first push).
+             Untick on /tech for installation / maintenance: the piece then stays stopped
+             after power-up until RUN is held 2 s or Start is pressed.
   softKicks  First N kicks after every start ramp from 50 % to 100 % length (0 = off).
 
 Panel buttons (1.4.0, always active, momentary to GND):
@@ -66,7 +67,7 @@ Board: XIAO_ESP32C3 (esp32 core 3.x).
 #include "page.h"     // technician page  /tech
 #include "artist.h"   // artist page      /
 
-#define FW_VERSION "1.5.12"
+#define FW_VERSION "1.6.0"
 
 // --- Pins (named after the schematic nets) ---
 constexpr uint8_t PIN_K1_GATE    = D10; // GPIO10 net K1_GATE   -> Q1 -> K1 : brake coil  (HIGH = brake released)
@@ -127,10 +128,11 @@ const Config DEFAULTS = {200, 900, 10000, 45000, 600000, 60000, 1250, 1250, 50, 
                          1, 5000, 0, 0, 0,
                          600000, 60000,
                          3000,
-                         0,
+                         1,
                          0, 0, 0, 40, 100,
                          60};
-constexpr uint32_t CFG_VERSION = 9;   // 9: + vfdLedPct (temporary)
+constexpr uint32_t CFG_VERSION = 10;  // 9: + vfdLedPct (temporary) · 10: autostart on by default
+constexpr size_t   CFG_V9_SIZE = 25 * sizeof(uint32_t);
 constexpr size_t   CFG_V8_SIZE = 24 * sizeof(uint32_t);
 // 7: Stop on VFD fault on by default · 8: strength output active high (GP8101S)
 constexpr size_t   CFG_V7_SIZE = 24 * sizeof(uint32_t);
@@ -281,10 +283,12 @@ void loadConfig() {
   } else if ((ver == 1 && len == CFG_V1_SIZE) || (ver == 2 && len == CFG_V2_SIZE) ||
              (ver == 3 && len == CFG_V3_SIZE) || (ver == 4 && len == CFG_V4_SIZE) ||
              (ver == 5 && len == CFG_V5_SIZE) || (ver == 6 && len == CFG_V6_SIZE) ||
-             (ver == 7 && len == CFG_V7_SIZE) || (ver == 8 && len == CFG_V8_SIZE)) {
+             (ver == 7 && len == CFG_V7_SIZE) || (ver == 8 && len == CFG_V8_SIZE) ||
+             (ver == 9 && len == CFG_V9_SIZE)) {
     // keep tuned settings; fields added later keep their DEFAULTS
     prefs.getBytes("cfg", &cfg, len);
     if (ver < 7) cfg.useVfdOk = 1;     // 1.5.1: Stop on VFD fault on by default
+    if (ver < 10) cfg.autostart = 1;   // 1.6.0: mains on starts the piece
     if (ver < 8) cfg.strInv = 0;       // 1.5.3: GP8101S takes the PWM active high
     if (ver < 3) {                     // pause ranges start as the old fixed values
       cfg.hangEveryMax = cfg.hangEvery ? cfg.hangEvery : DEFAULTS.hangEveryMax;
@@ -725,7 +729,7 @@ void setup() {
                 cfg.autostart ? "on" : "off", cfg.softKicks);
 
   startAP();
-  userRun = cfg.autostart;                         // default: stay stopped after a power cut
+  userRun = cfg.autostart;                         // mains on = start (untick Autostart for maintenance)
   faultActive = cfg.useVfdOk && !inVfdOk.state;    // wait for drive ready
   tickInputs(millis());
 }

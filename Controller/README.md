@@ -11,14 +11,14 @@ V1 pin map (old board, for reference): K1 = D8, K2 = D7, LED red = D5, LED green
 
 - Wi-Fi `KK-Untitled`, password `untitled2026` → http://192.168.4.1 (or http://untitled.local)
 - AP turns off 15 min after boot (setting; 0 = always on), stays up while a phone is connected
-- Stays stopped after power-up (Autostart on the technician page `/tech` changes this, off by default)
+- **Mains on starts the piece** (Autostart, on by default). For installation or maintenance untick *Autostart after power-up* on `/tech`: the piece then stays stopped after power-up until RUN is held 2 s. Tick it again before leaving.
 
 ## Panel buttons (momentary to GND)
 
 - **RUN** (PANEL 1–2): stopped → hold 2 s, the Move LED warning blink starts (you can let go), then the first push. Short press does nothing. Starting or running → any press stops and brakes at once. Web Start/Stop works the same way.
 - **Wi-Fi** (PANEL 3–4): press turns the AP on, or restarts its 15 min timer. The System LED shows Wi-Fi status. Don't hold it during power-up (GPIO2 strapping pin — the board won't boot).
 
-## Panel LEDs (firmware 1.5.12)
+## Panel LEDs (firmware 1.6.0)
 
 | LED | Shows |
 |---|---|
