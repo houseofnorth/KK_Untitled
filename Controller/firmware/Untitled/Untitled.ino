@@ -1,7 +1,7 @@
 /*
 ------------------------------------------------------------
 UNTITLED – Controller firmware (XIAO ESP32C3)
-Version 1.5.8  (2026-10-15)  – keep in step with FW_VERSION below
+Version 1.5.9  (2026-10-15)  – keep in step with FW_VERSION below
 
 Artist:          Kitty Kraus
 Original code:   Roman Zulek (Arduino)
@@ -36,7 +36,7 @@ Panel buttons (1.4.0, always active, momentary to GND):
                  button during power-up stops the board from booting.
   Web Start/Stop behave the same as the RUN button.
 
-Strength output (1.5.0, /tech, OFF by default):
+Strength output – FUTURE FEATURE (V3), not fitted. /tech "Future features", OFF by default:
   useStr     PWM on GPIO9 (test pad) -> DFRobot GP8101S (DFR1036) set to 0-10 V -> VFD AI1 (T6).
              Strength strMin..strMax % (random), drawn after each push so the
              module output settles during the rest. Off = GPIO9 left as input.
@@ -66,7 +66,7 @@ Board: XIAO_ESP32C3 (esp32 core 3.x).
 #include "page.h"     // technician page  /tech
 #include "artist.h"   // artist page      /
 
-#define FW_VERSION "1.5.8"
+#define FW_VERSION "1.5.9"
 
 // --- Pins (named after the schematic nets) ---
 constexpr uint8_t PIN_K1_GATE    = D10; // GPIO10 net K1_GATE   -> Q1 -> K1 : brake coil  (HIGH = brake released)

@@ -59,12 +59,17 @@ progress{width:100%;height:10px}
  <div class="row"><span>Wi-Fi button</span><span id="ib">&ndash;</span></div>
  <div class="row"><span>Motor current (T8)</span><span id="ao">&ndash;</span></div>
  <div class="row"><span>Kick peak last / avg</span><span id="pk">&ndash;</span></div>
- <div class="row"><span>Strength next / last push</span><span id="sn">&ndash;</span></div>
  <div class="row"><span>VFD faults (since boot)</span><span id="vf">&ndash;</span></div>
 </div>
 
 <div class="card"><h2>Settings</h2><form id="f"></form>
  <h2 style="margin-top:16px">V2 options</h2><form id="o"></form>
+ <div style="margin-top:22px;padding:12px;border:1px dashed #555;border-radius:10px;opacity:.6">
+  <h2 style="margin:0 0 4px">Future features · V3</h2>
+  <div class="sub">Push strength output. Needs the GP8101S module on GPIO9 and VFD AI1 &ndash; not fitted. Leave off.</div>
+  <form id="x"></form>
+  <div class="row"><span>Strength next / last push</span><span id="sn">&ndash;</span></div>
+ </div>
  <div class="btns" style="margin-top:10px">
   <button class="pri" onclick="save()">Save</button>
   <button onclick="defaults()">Defaults</button>
@@ -93,17 +98,19 @@ const O=[
  ['autostart','Autostart after power-up','on',1,'off = hold RUN 2 s or press Start'],
  ['softKicks','Soft start kicks','kicks',1,'50→100 %, 0 = off'],
  ['motorMa','Motor rated current (VFD P-08)','A',1000,'for the A readout, needs VFD P-25 = 9'],
+ ];
+const X=[
  ['useStr','Strength output','on',1,'GPIO9 → GP8101S (0–10 V) → VFD AI1 (T6)'],
  ['strInv','Strength output inverted','on',1,'off for GP8101S; on only for opto modules (DIN− → GPIO9)'],
  ['strMin','Strength min','%',1,'of 0–10 V, random per push'],['strMax','Strength max','%',1,'']];
-const A=F.concat(O);
+const A=F.concat(O,X);
 const $=id=>document.getElementById(id);
 function msg(t){const m=$('msg');m.textContent=t;m.style.display='block';clearTimeout(m.t);m.t=setTimeout(()=>m.style.display='none',2500)}
 function fmt(ms){if(ms<0)return '–';let s=Math.round(ms/1000);if(s<60)return s+' s';let m=Math.floor(s/60);s%=60;if(m<60)return m+' min '+s+' s';return Math.floor(m/60)+' h '+m%60+' min'}
 const fld=([k,l,u,sc,h])=>u=='on'
  ?`<label><div>${l}${h?' <small>'+h+'</small>':''}</div><input type="checkbox" id="${k}"></label>`
  :`<label><div>${l} <small>${u}${h?' · '+h:''}</small></div><input type="number" inputmode="decimal" step="any" min="0" id="${k}"></label>`;
-$('f').innerHTML=F.map(fld).join('');$('o').innerHTML=O.map(fld).join('');
+$('f').innerHTML=F.map(fld).join('');$('o').innerHTML=O.map(fld).join('');$('x').innerHTML=X.map(fld).join('');
 let rev=-1,ed=new Set();   // ed = fields edited here and not saved yet
 A.forEach(([k])=>$(k).addEventListener('input',()=>ed.add(k)));
 let C={};
