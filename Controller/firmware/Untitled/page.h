@@ -34,7 +34,7 @@ progress{width:100%;height:10px}
 <div class="card">
  <div class="phase" id="phase">&hellip;</div>
  <div class="sub" id="hold"></div>
- <div class="dots"><div class="dot m" id="dM"><i></i>Run / motor</div><div class="dot w" id="dW"><i></i>Wi-Fi enabled</div><div class="dot v" id="dV"><i></i>VFD connected</div><div class="dot b" id="dB"><i></i>Brake released</div></div>
+ <div class="dots"><div class="dot m" id="dM"><i></i>Motor</div><div class="dot b" id="dB"><i></i>Brake</div><div class="dot v" id="dV"><i></i>VFD</div><div class="dot w" id="dW"><i></i>Wi-Fi</div></div>
  <div class="row"><span>Next kick in</span><span id="nk">&ndash;</span></div>
  <div class="row"><span>Next pause in</span><span id="np">&ndash;</span></div>
  <div class="row"><span>Last kick / rest</span><span id="lk">&ndash;</span></div>
