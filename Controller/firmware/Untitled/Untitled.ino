@@ -1,7 +1,7 @@
 /*
 ------------------------------------------------------------
 UNTITLED – Controller firmware (XIAO ESP32C3)
-Version 1.5.4  (2026-10-15)  – keep in step with FW_VERSION below
+Version 1.5.5  (2026-10-15)  – keep in step with FW_VERSION below
 
 Artist:          Kitty Kraus
 Original code:   Roman Zulek (Arduino)
@@ -66,7 +66,7 @@ Board: XIAO_ESP32C3 (esp32 core 3.x).
 #include "page.h"     // technician page  /tech
 #include "artist.h"   // artist page      /
 
-#define FW_VERSION "1.5.4"
+#define FW_VERSION "1.5.5"
 
 // --- Pins (named after the schematic nets) ---
 constexpr uint8_t PIN_K1_GATE    = D10; // GPIO10 net K1_GATE   -> Q1 -> K1 : brake coil  (HIGH = brake released)
@@ -448,20 +448,27 @@ bool moveWarning(uint32_t now) {
          (int32_t)(nextKick - now) <= (int32_t)cfg.warnMs;
 }
 
-// Slow breathing: 10 % .. 100 % of the LED brightness setting, cosine fade
-uint32_t breathe(uint32_t now, uint32_t period) {
-  float x = 0.5f - 0.5f * cosf(6.2831853f * (float)(now % period) / period);   // 0..1
-  float lvl = 0.10f + 0.90f * x * x;                                            // eased, perceptual
+// Slow breathing: 10 % .. 100 % of the LED brightness setting, cosine fade.
+// t0 = when breathing started; it starts at full brightness and fades down,
+// so it joins smoothly onto a solid or blinking LED.
+uint32_t breathe(uint32_t now, uint32_t period, uint32_t t0 = 0) {
+  float x = 0.5f + 0.5f * cosf(6.2831853f * (float)((now - t0) % period) / period);   // 1..0..1
+  float lvl = 0.10f + 0.90f * x * x;                                                   // eased, perceptual
   return (uint32_t)(ledDuty() * lvl);
 }
 
 void tickIndicators(uint32_t now) {
   // VFD LED: on = drive OK, breathing = not OK / not connected while stopped,
   //          2 Hz blink = not OK while the piece should run (fault)
+  static uint32_t vbStart = 0;
+  static bool vbWas = false;
+  bool vb = !inVfdOk.state && !userRun;
+  if (vb && !vbWas) vbStart = now;            // breathing starts at full brightness
+  vbWas = vb;
   uint32_t vDuty;
   if (inVfdOk.state)  vDuty = ledDuty();
   else if (userRun)   vDuty = blink(now, 500) ? ledDuty() : 0;
-  else                vDuty = breathe(now, 3000);
+  else                vDuty = breathe(now, 3000, vbStart);
   ledcWrite(PIN_LED_VFD_OK, vDuty * VFD_LED_PCT / 100);   // amber dimmed to match the green
   // System LED (active low) = Wi-Fi indicator: on while the AP is up, fast blink during OTA
   bool sOn = otaActive ? blink(now, 100) : apOn;
@@ -474,7 +481,12 @@ void tickIndicators(uint32_t now) {
   bool warn = moveWarning(now);
   if (warn && !warnWas) warnPhase = 0;
   warnWas = warn;
+  static uint32_t brStart = 0;
+  static bool brWas = false;
   uint32_t mDuty = 0;
+  bool br = !moveOn && !warn && running && !otaActive;
+  if (br && !brWas) brStart = now;            // start each breathing spell at full brightness
+  brWas = br;
   if (moveOn) {
     mDuty = ledDuty();
   } else if (warn) {
@@ -483,8 +495,8 @@ void tickIndicators(uint32_t now) {
     float period = 700.0f - 620.0f * f;                               // 700 ms -> 80 ms
     warnPhase += dt / period;
     mDuty = (warnPhase - (int)warnPhase) < 0.5f ? ledDuty() : 0;
-  } else if (running && !otaActive) {
-    mDuty = breathe(now, 3000);
+  } else if (br) {
+    mDuty = breathe(now, 3000, brStart);
   }
   ledcWrite(PIN_LED_MOVE, mDuty);
 }
