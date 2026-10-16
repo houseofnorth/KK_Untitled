@@ -1,8 +1,8 @@
 # Firmware — `firmware/Untitled/`
 
-Installation firmware for the V2 controller (Seeed XIAO ESP32C3). Port of Roman Zulek's original Arduino logic (push / rest / long pause) plus panel buttons and lights, a Wi-Fi settings page and over-the-air updates. Current version: see `FW_VERSION` at the top of [`Untitled.ino`](firmware/Untitled/Untitled.ino) (1.6.1).
+Installation firmware for the V2 controller (Seeed XIAO ESP32C3). Port of Roman Zulek's original Arduino logic (push / rest / long pause) plus panel buttons and lights, a Wi-Fi settings page and over-the-air updates. Current version: see `FW_VERSION` at the top of [`Untitled.ino`](Untitled/Untitled.ino) (1.6.1).
 
-How to use the piece: [README](README.md) · Board, wiring, drive settings: [HARDWARE.md](HARDWARE.md)
+How to use the piece: [README](../README.md) · Board, wiring, drive settings: [HARDWARE.md](../hardware/HARDWARE.md)
 
 ## Files
 
@@ -22,7 +22,7 @@ arduino-cli compile --fqbn esp32:esp32:XIAO_ESP32C3 --output-dir build/Untitled 
 
 - **Over the air (normal):** `/tech` → Firmware update → upload `Untitled.ino.bin` (not `merged.bin`). The piece stops during the update and restarts; with Autostart on it starts again by itself.
 - **USB:** Arduino IDE Upload, or `esptool.py --chip esp32c3 write_flash 0x0 Untitled.ino.merged.bin`. Plug USB in before the IRM supplies are on (see HARDWARE.md, *USB with the IRMs connected*).
-- `build/` is local only (git-ignored).
+- The current build is kept here as [`Untitled.ino.bin`](Untitled.ino.bin) — that's the file to upload. After compiling, copy `build/Untitled/Untitled.ino.bin` over it. `build/` itself is local only (git-ignored).
 
 ## Behaviour
 

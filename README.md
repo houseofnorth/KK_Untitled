@@ -4,7 +4,7 @@
 
 **Artist:** Kitty Kraus · **Original controller:** Roman Zulek · **Controller revision:** Fubbi Karlsson, House of North, 2026
 
-A motor gives the pendulum a push now and then, rests, and every so often takes a long pause — never quite the same twice. This page explains how to run the piece. Technical details are in [HARDWARE.md](HARDWARE.md) and [FIRMWARE.md](FIRMWARE.md).
+A motor gives the pendulum a push now and then, rests, and every so often takes a long pause — never quite the same twice. This page explains how to run the piece. Technical details are in [HARDWARE.md](hardware/HARDWARE.md) and [FIRMWARE.md](firmware/FIRMWARE.md).
 
 > [!WARNING]
 > **Keep clear of the pendulum before it starts.** The arm can move suddenly and with great force, and it can hit anyone within its swing. Before you switch the mains on or hold RUN / STOP, make sure **nobody is in the swing area**. The blinking red light is your last warning — the first push follows straight after. To stop it at any time, press **RUN / STOP**.

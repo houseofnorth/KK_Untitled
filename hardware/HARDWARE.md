@@ -1,14 +1,14 @@
 # Hardware — controller V2 (XIAO ESP32C3)
 
-![Board render](hardware/docs/board%20render.png)
+![Board render](docs/board%20render.png)
 
-How to use the piece: [README](README.md) · Software: [FIRMWARE.md](FIRMWARE.md)
+How to use the piece: [README](../README.md) · Software: [FIRMWARE.md](../firmware/FIRMWARE.md)
 
 Second revision of the Chaos Pendulum controller. Drives the VersiDrive i E2 VFD (K2, run impulse) and the motor's 24 V spring-applied brake (K1).
 Safe default: brake engaged, VFD disabled until firmware commands otherwise.
 
 - 100 × 90 mm, 2 layers, GND pour both sides, tented vias
-- Assembled at JLCPCB (ordered 2026-09-25, files in [`hardware/production/`](hardware/production/))
+- Assembled at JLCPCB (ordered 2026-09-25, files in [`hardware/production/`](production/))
 - Hand-soldered: XIAO ESP32C3, MOTOR and PANEL terminal blocks
 - Power: Mean Well IRM 5 V + IRM 24 V inside the enclosure. D9 (B5819W) feeds 5 V into the XIAO, so USB and external 5 V can be connected at the same time.
 
@@ -93,7 +93,7 @@ Upload from `hardware/production/`: Gerber zip + `Chaos Pendulum PCB_BOM.csv` + 
 - `docs/option 1 - VFD analog feedback.svg` — VFD analog output wiring
 - `docs/kk_untitled_qr.svg` — QR code for the panel
 - `labels/* Niimbot.xlsx` — label sheets for the Niimbot app (VFD cable, brake cable, panel LED wires)
-- Manuals and the site fault check: [`Specs/`](Specs/)
+- Manuals and the site fault check: [`Specs/`](../Specs/)
 
 ## Installation / wiring
 
@@ -153,7 +153,7 @@ The drive-OK input is a relay contact from MOTOR 9 (VFD_OK_IN) to MOTOR 10 (GND)
 
 ## Future (V3): push strength output — not fitted
 
-PWM on the GPIO9 test pad → DFRobot Gravity GP8101S (DFR1036, range switch 0–10 V) → VFD AI1 (T6), so each push can vary in strength as well as length. The firmware support exists but is hidden and off (see [FIRMWARE.md](FIRMWARE.md)).
+PWM on the GPIO9 test pad → DFRobot Gravity GP8101S (DFR1036, range switch 0–10 V) → VFD AI1 (T6), so each push can vary in strength as well as length. The firmware support exists but is hidden and off (see [FIRMWARE.md](../firmware/FIRMWARE.md)).
 
 - Module + → XIAO 3V3, − → GND, PWM in → GPIO9 pad (bodge wire), VOUT → brown core → T6.
 - Free the brown core by jumpering T11 to T9 at the drive (relay common to 0 V); drive OK still works over green.
