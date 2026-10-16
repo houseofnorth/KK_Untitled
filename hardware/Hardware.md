@@ -4,7 +4,7 @@
 |---|---|
 | ![PCB top](docs/pcb%20top.png) | ![PCB bottom](docs/pcb%20bottom.png) |
 
-How to use the piece: [README](../README.md) · Software: [FIRMWARE.md](../firmware/FIRMWARE.md)
+How to use the piece: [README](../README.md) · Software: [Firmware.md](../firmware/Firmware.md)
 
 Second revision of the Chaos Pendulum controller. Drives the VersiDrive i E2 VFD (K2, run impulse) and the motor's 24 V spring-applied brake (K1).
 Safe default: brake engaged, VFD disabled until firmware commands otherwise.
@@ -156,7 +156,7 @@ The drive-OK input is a relay contact from MOTOR 9 (VFD_OK_IN) to MOTOR 10 (GND)
 
 ## Future (V3): push strength output — not fitted
 
-PWM on the GPIO9 test pad → DFRobot Gravity GP8101S (DFR1036, range switch 0–10 V) → VFD AI1 (T6), so each push can vary in strength as well as length. The firmware support exists but is hidden and off (see [FIRMWARE.md](../firmware/FIRMWARE.md)).
+PWM on the GPIO9 test pad → DFRobot Gravity GP8101S (DFR1036, range switch 0–10 V) → VFD AI1 (T6), so each push can vary in strength as well as length. The firmware support exists but is hidden and off (see [Firmware.md](../firmware/Firmware.md)).
 
 - Module + → XIAO 3V3, − → GND, PWM in → GPIO9 pad (bodge wire), VOUT → brown core → T6.
 - Free the brown core by jumpering T11 to T9 at the drive (relay common to 0 V); drive OK still works over green.

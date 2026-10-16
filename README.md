@@ -11,7 +11,7 @@
 </tr>
 </table>
 
-A motor gives the pendulum a push now and then, rests, and every so often takes a long pause — never quite the same twice. This page explains how to run the piece. Technical details are in [HARDWARE.md](hardware/HARDWARE.md) and [FIRMWARE.md](firmware/FIRMWARE.md).
+A motor gives the pendulum a push now and then, rests, and every so often takes a long pause — never quite the same twice. This page explains how to run the piece. Technical details are in [Hardware.md](hardware/Hardware.md) and [Firmware.md](firmware/Firmware.md).
 
 > [!WARNING]
 > **Keep clear of the pendulum before it starts.** The arm can move suddenly and with great force, and it can hit anyone within its swing. Before you switch the mains on or hold RUN / STOP, make sure **nobody is in the swing area**. The blinking red light is your last warning — the first push follows straight after. To stop it at any time, press **RUN / STOP**.
@@ -99,19 +99,28 @@ The Wi-Fi switches itself off after 15 minutes, but not while a phone is connect
 
 ### Main page
 
-- **Status** at the top: what the piece is doing now and when the next push comes.
-- **Start / Stop** — the same as the RUN / STOP button. **Push now** gives the next push straight away.
-- **Sliders**, each with a minimum and a maximum — every time the piece picks a random value in between:
-
-| Slider | What it sets |
+| Control | What it does |
 |---|---|
-| **Push strength** | How long, and so how hard, each push is. Longer pushes swing higher. |
-| **Rest** | Time from one push to the next. |
-| **Long pause every** | How often the piece takes a long pause. Switch off for no long pauses. |
-| **Long pause length** | How long a long pause lasts. |
+| **Status** (top) | What the piece is doing now and when the next push comes |
+| **Start / Stop** | Same as the RUN / STOP button |
+| **Push now** | Gives the next push straight away — keep clear |
+| **Save** | Keeps your changes, also after a power cut |
+| **Undo** | Goes back to the last saved settings |
+| **EN / DE** | Switches the language |
+| **Reset to 15 min** | Restarts the Wi-Fi timer |
 
-- Changes work **at once**, but are not kept until you press **Save**. **Undo** goes back to the last saved settings. Saved settings survive a power cut.
-- **EN / DE** at the top switches the language.
+### Sliders
+
+Each slider has two handles, a minimum and a maximum. Every time, the piece picks a random value between them — that's what keeps it from repeating. Put both handles together for a fixed value. Changes work **at once**; press **Save** to keep them.
+
+| Slider | What it sets | Range | Factory setting |
+|---|---|---|---|
+| **Push strength** | How long the motor pushes. Longer = harder push = higher swing. | 0.05 – 5 s | 0.2 – 0.9 s |
+| **Rest** | Time from one push to the next | 2 s – 10 min | 10 – 45 s |
+| **Long pause every** | How often the piece takes a long pause. Switch it off for no long pauses. | 1 min – 3 h | 10 min |
+| **Long pause length** | How long a long pause lasts | 10 s – 60 min | 60 s |
+
+Tip: change one slider at a time and watch a few pushes before you save.
 
 ### Advanced settings
 

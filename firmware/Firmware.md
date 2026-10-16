@@ -2,7 +2,7 @@
 
 Installation firmware for the V2 controller (Seeed XIAO ESP32C3). Port of Roman Zulek's original Arduino logic (push / rest / long pause) plus panel buttons and lights, a Wi-Fi settings page and over-the-air updates. Current version: see `FW_VERSION` at the top of [`Untitled.ino`](Untitled/Untitled.ino) (1.6.1).
 
-How to use the piece: [README](../README.md) · Board, wiring, drive settings: [HARDWARE.md](../hardware/HARDWARE.md)
+How to use the piece: [README](../README.md) · Board, wiring, drive settings: [Hardware.md](../hardware/Hardware.md)
 
 ## Files
 
@@ -21,7 +21,7 @@ arduino-cli compile --fqbn esp32:esp32:XIAO_ESP32C3 --output-dir build/Untitled 
 ```
 
 - **Over the air (normal):** `/tech` → Firmware update → upload `Untitled.ino.bin` (not `merged.bin`). The piece stops during the update and restarts; with Autostart on it starts again by itself.
-- **USB:** Arduino IDE Upload, or `esptool.py --chip esp32c3 write_flash 0x0 Untitled.ino.merged.bin`. Plug USB in before the IRM supplies are on (see HARDWARE.md, *USB with the IRMs connected*).
+- **USB:** Arduino IDE Upload, or `esptool.py --chip esp32c3 write_flash 0x0 Untitled.ino.merged.bin`. Plug USB in before the IRM supplies are on (see Hardware.md, *USB with the IRMs connected*).
 - The current build is kept here as [`Untitled.ino.bin`](Untitled.ino.bin) — that's the file to upload. After compiling, copy `build/Untitled/Untitled.ino.bin` over it. `build/` itself is local only (git-ignored).
 
 ## Behaviour
@@ -93,4 +93,4 @@ Settings live in NVS (`Preferences`, namespace `kk`) as one struct with a versio
 
 ## Future (V3): push strength output — hidden
 
-Code for a second dimension of "push strength" is in place but hidden on `/tech` and off: PWM on GPIO9 (1 kHz, 10-bit) → GP8101S → VFD AI1, value random between Strength min and max, chosen after each push so the module settles during the rest. Settings `useStr`, `strInv` (off for the GP8101S), `strMin`, `strMax`. To show them, remove `display:none` on `#future` in `page.h`. With the output on, the main page splits *Push length* and *Push strength*. Hardware notes in HARDWARE.md.
+Code for a second dimension of "push strength" is in place but hidden on `/tech` and off: PWM on GPIO9 (1 kHz, 10-bit) → GP8101S → VFD AI1, value random between Strength min and max, chosen after each push so the module settles during the rest. Settings `useStr`, `strInv` (off for the GP8101S), `strMin`, `strMax`. To show them, remove `display:none` on `#future` in `page.h`. With the output on, the main page splits *Push length* and *Push strength*. Hardware notes in Hardware.md.
