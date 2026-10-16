@@ -50,7 +50,7 @@ A short press on RUN / STOP while the piece is stopped does nothing — this is 
 |---|---|
 | On | Drive connected and ready |
 | Slow breathing | Drive off or not connected (piece stopped) |
-| Fast blinking | Drive fault while the piece should run — it waits, brake on, and carries on by itself once the drive is OK again |
+| Fast blinking | The drive has a problem. The piece is paused and the brake holds the arm. **It starts again by itself** as soon as the drive is OK — keep clear. |
 
 If amber keeps blinking, switch the mains off for a minute and on again. If that doesn't help, call House of North.
 
