@@ -24,32 +24,45 @@ A short press on RUN / STOP while the piece is stopped does nothing — this is 
 
 **Keep clear of the arm** whenever the piece is running or starting.
 
-## Panel
+## The panel
 
-| | Name | What it does |
+![Front panel](hardware/docs/front%20panel.png)
+
+Four lights up top tell you how the piece is feeling. Down below: two buttons to press and two sockets for the cables. Each light sits right above its partner.
+
+**Up top — the lights**
+
+| Light | Colour | It's telling you |
 |---|---|---|
-| Button | **RUN / STOP** | Stop (press) · start (hold 2 s) |
-| Button | **WIFI ENABLE** | Switches the Wi-Fi on for 15 minutes, for the settings page on a phone |
-| Light | **RUN / STOP** (red) | see below |
-| Light | **WIFI ENABLE** (blue) | on = Wi-Fi is on · fast blinking = software update in progress |
-| Light | **VFD CONNECTED** (amber) | see below |
-| Light | **BRAKE RELEASE** (green) | on = brake released, the arm can move |
+| RUN / STOP | red | The pendulum's heartbeat — see below |
+| BRAKE RELEASE | green | On = brake off, the arm is free to swing |
+| VERSI DRIVE | amber | How the motor drive is doing — see below |
+| WIFI ENABLE | blue | On = Wi-Fi is up · fast blinking = new software going in |
 
-**Red — the piece**
+**Down below — buttons and sockets**
+
+| Under | What it is | What it does |
+|---|---|---|
+| RUN / STOP | Red button | Press once to stop · hold 2 s to start |
+| BRAKE RELEASE | Silver socket | The cable to the motor brake |
+| VERSI DRIVE | Black socket | The cable to the motor drive |
+| WIFI ENABLE | Blue button | Wi-Fi on for 15 minutes, for the settings page on your phone |
+
+**Red — the heartbeat**
 
 | Red light | Meaning |
 |---|---|
 | Off | Stopped |
-| Slow breathing | Running, resting between pushes |
-| Blinking faster and faster | A push is about to come |
-| On | Pushing |
+| Slow breathing | Running, chilling between pushes |
+| Blinking faster and faster | A push is on its way |
+| On | Pushing — here we go |
 
-**Amber — the motor drive (VersiDrive)**
+**Amber — the motor drive**
 
 | Amber light | Meaning |
 |---|---|
-| On | Drive connected and ready |
-| Slow breathing | Drive off or not connected (piece stopped) |
+| On | Drive connected and ready to roll |
+| Slow breathing | Drive off or not plugged in — the piece won't start |
 | Fast blinking | The drive has a problem. The piece is paused and the brake holds the arm. **It starts again by itself** as soon as the drive is OK — keep clear. |
 
 If amber keeps blinking, switch the mains off for a minute and on again.
