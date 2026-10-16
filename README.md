@@ -52,12 +52,12 @@ A short press on RUN / STOP while the piece is stopped does nothing — this is 
 | Slow breathing | Drive off or not connected (piece stopped) |
 | Fast blinking | The drive has a problem. The piece is paused and the brake holds the arm. **It starts again by itself** as soon as the drive is OK — keep clear. |
 
-If amber keeps blinking, switch the mains off for a minute and on again. If that doesn't help, call House of North.
+If amber keeps blinking, switch the mains off for a minute and on again.
 
 ## The settings page (phone)
 
 1. Press **WIFI ENABLE**. The blue light comes on.
-2. On your phone, join the Wi-Fi **Untitled** (password: from House of North / the installation notes).
+2. On your phone, join the Wi-Fi **Untitled** (password: see the installation notes).
 3. Open **http://192.168.4.1** in the browser. Turn mobile data off if the page doesn't load.
 
 The Wi-Fi switches itself off after 15 minutes, but not while a phone is connected. **Reset to 15 min** at the bottom of the page restarts the timer.
@@ -80,7 +80,7 @@ The Wi-Fi switches itself off after 15 minutes, but not while a phone is connect
 
 ### Advanced settings
 
-The link **Advanced settings** at the bottom leads to the technician page. It shows the panel lights, counters, the drive signals and every setting in numbers, and it is where the software is updated. You normally don't need it — please change things there only together with House of North.
+The link **Advanced settings** at the bottom leads to the technician page. It shows the panel lights, counters, the drive signals and every setting in numbers, and it is where the software is updated. You normally don't need it — only change things there if you know what they do.
 
 ## Help
 
@@ -90,7 +90,3 @@ The link **Advanced settings** at the bottom leads to the technician page. It sh
 | Amber blinking fast | Drive fault — the piece waits. Switch mains off for a minute, then on. |
 | Settings page won't load | Press WIFI ENABLE again, check you are on the **Untitled** Wi-Fi, turn mobile data off, type `http://192.168.4.1`. |
 | Arm moves weakly | See the *Site Fault Check* in [Specs](Specs/). |
-
----
-
-[House of North GmbH](https://north-berlin.com)
