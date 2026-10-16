@@ -1,3 +1,7 @@
-Controller/build/
 .DS_Store
-Controller/firmware/**/build/
+# local compiled binaries (arduino-cli --output-dir build/Untitled)
+build/
+firmware/**/build/
+# local leftovers, not published
+_archive/
+*.xls

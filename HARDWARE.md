@@ -1,12 +1,14 @@
-# Controller V2 — XIAO ESP32C3 board
+# Hardware — controller V2 (XIAO ESP32C3)
 
-![V2 board render](docs/V2%20board%20render.png)
+![Board render](hardware/docs/board%20render.png)
+
+How to use the piece: [README](README.md) · Software: [FIRMWARE.md](FIRMWARE.md)
 
 Second revision of the Chaos Pendulum controller. Drives the VersiDrive i E2 VFD (K2, run impulse) and the motor's 24 V spring-applied brake (K1).
 Safe default: brake engaged, VFD disabled until firmware commands otherwise.
 
 - 100 × 90 mm, 2 layers, GND pour both sides, tented vias
-- Assembled at JLCPCB (ordered 2026-09-25, files in `OUTPUT/CAM 02`)
+- Assembled at JLCPCB (ordered 2026-09-25, files in [`hardware/production/`](hardware/production/))
 - Hand-soldered: XIAO ESP32C3, MOTOR and PANEL terminal blocks
 - Power: Mean Well IRM 5 V + IRM 24 V inside the enclosure. D9 (B5819W) feeds 5 V into the XIAO, so USB and external 5 V can be connected at the same time.
 
@@ -72,7 +74,7 @@ Panel LEDs have their series resistors on the board.
 
 ## Ordering at JLCPCB
 
-Upload from `OUTPUT/CAM 02`: Gerber zip + `Chaos Pendulum PCB_BOM.csv` + `Chaos Pendulum PCB_CPL.csv`.
+Upload from `hardware/production/`: Gerber zip + `Chaos Pendulum PCB_BOM.csv` + `Chaos Pendulum PCB_CPL.csv`.
 
 - K1/K2: Omron G6S-2F-TR DC5 (C397130). TX2SA-5V was out of stock.
 - Via covering: Tented.
@@ -82,15 +84,16 @@ Upload from `OUTPUT/CAM 02`: Gerber zip + `Chaos Pendulum PCB_BOM.csv` + `Chaos 
 - Diodes and relays come out correct as exported.
 - Bottom silkscreen (House of North) looks mirrored in JLC's preview; that is correct.
 
-## Files
+## Files (`hardware/`)
 
-- `V2 BOM - JLC.csv`, `V2 BOM - hand solder.csv`, `V1 BOM.xls`
-- `OUTPUT/CAM 02/` — production files as ordered
-- `docs/V2 enclosure panels.svg` — enclosure panel layout (PANEL + MOTOR sides), September concept
+- `production/` — Gerber zip, BOM and CPL exactly as ordered at JLCPCB
+- `BOM - JLC.csv`, `BOM - hand solder.csv` — assembled and hand-soldered parts
+- `docs/enclosure panels.svg` — enclosure panel layout (PANEL + MOTOR sides), September concept
 - `docs/VFD cable labels.png`, `docs/VFD cable solder layout.png` — strand colours, labels, Quick-Lock solder side
-- `docs/* Niimbot.xlsx` — label sheets for the Niimbot app (VFD cable, brake cable, panel LED wires)
-- `docs/V2 option 1 - VFD analog feedback.svg` — VFD analog output wiring
-- Firmware: `../Controller/firmware/Untitled/` (pin map above)
+- `docs/option 1 - VFD analog feedback.svg` — VFD analog output wiring
+- `docs/kk_untitled_qr.svg` — QR code for the panel
+- `labels/* Niimbot.xlsx` — label sheets for the Niimbot app (VFD cable, brake cable, panel LED wires)
+- Manuals and the site fault check: [`Specs/`](Specs/)
 
 ## Installation / wiring
 
@@ -131,3 +134,29 @@ Ground the shield at **one end only — the controller end**. VersiDrive manual,
 
 The XIAO 5V pin is the USB-C VBUS line, and D9 back-feeds it from the IRM. A Mac's USB-C port then refuses to connect.
 Plug USB in **before** switching the IRMs on, use a USB-A port/hub with an A-to-C cable, or update over the air (Advanced settings → Firmware update).
+
+## VersiDrive i E2 settings
+
+Photograph every parameter before changing anything. P-15 and above need **P-14 = 101**.
+
+| Param | Set to | Why |
+|---|---|---|
+| P-12 | 0 | Terminal control, DI1 (T2) = run |
+| P-18 | 1 | Relay T10/T11 = drive ready (fail-safe, read as VFD_OK) |
+| P-25 | 9 | T8 = output current, 0–10 V = 0–200 % of P-08 |
+| P-03 | short (~0.3 s) | A push lasts 0.2–0.9 s; a 5 s ramp hides it |
+| P-07/08/09 | motor nameplate | P-08 also goes into `/tech` for the A readout |
+
+## Bench test without the drive
+
+The drive-OK input is a relay contact from MOTOR 9 (VFD_OK_IN) to MOTOR 10 (GND). A switch across 9–10 fakes the drive: closed = drive OK, open = fault. Never put supply voltage on pin 9 (3.3 V pull-up, 5 V TVS).
+
+## Future (V3): push strength output — not fitted
+
+PWM on the GPIO9 test pad → DFRobot Gravity GP8101S (DFR1036, range switch 0–10 V) → VFD AI1 (T6), so each push can vary in strength as well as length. The firmware support exists but is hidden and off (see [FIRMWARE.md](FIRMWARE.md)).
+
+- Module + → XIAO 3V3, − → GND, PWM in → GPIO9 pad (bodge wire), VOUT → brown core → T6.
+- Free the brown core by jumpering T11 to T9 at the drive (relay common to 0 V); drive OK still works over green.
+- Take the drive's own speed-pot wiper off T6; keep P-03 short.
+- GPIO9 is a boot strapping pin: the module input must read above ~100 kΩ to GND, then confirm the board still boots.
+- Not usable with the LC-LM358-PWM2V (needs ≥ 4.5 V PWM).
