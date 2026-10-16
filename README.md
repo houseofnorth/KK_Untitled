@@ -42,9 +42,9 @@ Top row: four status lights. Bottom row: two buttons and two cable sockets. Each
 | Light | Colour | Meaning |
 |---|---|---|
 | RUN / STOP | red | What the piece is doing — see below |
-| BRAKE RELEASE | green | On = brake off, the arm is free to swing |
+| BRAKE RELEASE | green | The brake — see below |
 | VERSI DRIVE | amber | How the motor drive is doing — see below |
-| WIFI ENABLE | blue | On = Wi-Fi is up · fast blinking = new software going in |
+| WIFI ENABLE | blue | Wi-Fi — see below |
 
 **Buttons and sockets**
 
@@ -64,6 +64,13 @@ Top row: four status lights. Bottom row: two buttons and two cable sockets. Each
 | Blinking faster and faster | A push is about to come |
 | On | Pushing |
 
+**Green — the brake**
+
+| Green light | Meaning |
+|---|---|
+| On | Brake released — the arm is free and can move |
+| Off | Brake on — the arm is held |
+
 **Amber — the motor drive**
 
 | Amber light | Meaning |
@@ -73,6 +80,14 @@ Top row: four status lights. Bottom row: two buttons and two cable sockets. Each
 | Fast blinking | The drive has a problem. The piece is paused and the brake holds the arm. **It starts again by itself** as soon as the drive is OK — keep clear. |
 
 If amber keeps blinking, switch the mains off for a minute and on again.
+
+**Blue — Wi-Fi**
+
+| Blue light | Meaning |
+|---|---|
+| On | Wi-Fi is on — you can open the settings page |
+| Off | Wi-Fi is off. Press **WIFI ENABLE** to switch it on |
+| Fast blinking | New software is being installed. Don't switch off. |
 
 ## The settings page (phone)
 
