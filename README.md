@@ -57,7 +57,7 @@ If amber keeps blinking, switch the mains off for a minute and on again.
 ## The settings page (phone)
 
 1. Press **WIFI ENABLE**. The blue light comes on.
-2. On your phone, join the Wi-Fi **Untitled** (password: see the installation notes).
+2. On your phone, join the Wi-Fi **Untitled** (password: **deltitnu**).
 3. Open **http://192.168.4.1** in the browser. Turn mobile data off if the page doesn't load.
 
 The Wi-Fi switches itself off after 15 minutes, but not while a phone is connected. **Reset to 15 min** at the bottom of the page restarts the timer.
