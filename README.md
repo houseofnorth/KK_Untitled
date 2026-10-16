@@ -35,18 +35,18 @@ A short press on RUN / STOP while the piece is stopped does nothing — this is 
 
 ![Front panel](hardware/docs/front%20panel.png)
 
-Four lights up top tell you how the piece is feeling. Down below: two buttons to press and two sockets for the cables. Each light sits right above its partner.
+Top row: four status lights. Bottom row: two buttons and two cable sockets. Each light sits above the button or socket it belongs to.
 
-**Up top — the lights**
+**Lights**
 
-| Light | Colour | It's telling you |
+| Light | Colour | Meaning |
 |---|---|---|
-| RUN / STOP | red | The pendulum's heartbeat — see below |
+| RUN / STOP | red | What the piece is doing — see below |
 | BRAKE RELEASE | green | On = brake off, the arm is free to swing |
 | VERSI DRIVE | amber | How the motor drive is doing — see below |
 | WIFI ENABLE | blue | On = Wi-Fi is up · fast blinking = new software going in |
 
-**Down below — buttons and sockets**
+**Buttons and sockets**
 
 | Under | What it is | What it does |
 |---|---|---|
@@ -55,20 +55,20 @@ Four lights up top tell you how the piece is feeling. Down below: two buttons to
 | VERSI DRIVE | Black socket | The cable to the motor drive |
 | WIFI ENABLE | Blue button | Wi-Fi on for 15 minutes, for the settings page on your phone |
 
-**Red — the heartbeat**
+**Red — the piece**
 
 | Red light | Meaning |
 |---|---|
 | Off | Stopped |
-| Slow breathing | Running, chilling between pushes |
-| Blinking faster and faster | A push is on its way |
-| On | Pushing — here we go |
+| Slow breathing | Running, resting between pushes |
+| Blinking faster and faster | A push is about to come |
+| On | Pushing |
 
 **Amber — the motor drive**
 
 | Amber light | Meaning |
 |---|---|
-| On | Drive connected and ready to roll |
+| On | Drive connected and ready |
 | Slow breathing | Drive off or not plugged in — the piece won't start |
 | Fast blinking | The drive has a problem. The piece is paused and the brake holds the arm. **It starts again by itself** as soon as the drive is OK — keep clear. |
 
