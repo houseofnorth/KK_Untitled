@@ -1,6 +1,6 @@
 # Kitty Kraus — Untitled
 
-![Controller board](hardware/docs/board%20render.png)
+![Controller board](hardware/docs/pcb%20top.png)
 
 **Artist:** Kitty Kraus · **Original controller:** Roman Zulek · **Controller revision:** Fubbi Karlsson, House of North, 2026
 

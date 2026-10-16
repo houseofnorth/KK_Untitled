@@ -1,6 +1,8 @@
 # Hardware — controller V2 (XIAO ESP32C3)
 
-![Board render](docs/board%20render.png)
+| Top | Bottom |
+|---|---|
+| ![PCB top](docs/pcb%20top.png) | ![PCB bottom](docs/pcb%20bottom.png) |
 
 How to use the piece: [README](../README.md) · Software: [FIRMWARE.md](../firmware/FIRMWARE.md)
 
@@ -89,6 +91,7 @@ Upload from `hardware/production/`: Gerber zip + `Chaos Pendulum PCB_BOM.csv` + 
 - `production/` — Gerber zip, BOM and CPL exactly as ordered at JLCPCB
 - `BOM - JLC.csv`, `BOM - hand solder.csv` — assembled and hand-soldered parts
 - `docs/enclosure panels.svg` — enclosure panel layout (PANEL + MOTOR sides), September concept
+- `docs/pcb top.png`, `docs/pcb bottom.png` — board, both sides
 - `docs/VFD cable labels.png`, `docs/VFD cable solder layout.png` — strand colours, labels, Quick-Lock solder side
 - `docs/option 1 - VFD analog feedback.svg` — VFD analog output wiring
 - `docs/kk_untitled_qr.svg` — QR code for the panel
