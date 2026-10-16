@@ -1,8 +1,15 @@
 # Kitty Kraus — Untitled
 
-![Controller board](hardware/docs/pcb%20top.png)
-
-**Artist:** Kitty Kraus · **Original controller:** Roman Zulek · **Controller revision:** Fubbi Karlsson, House of North, 2026
+<table>
+<tr>
+<td width="66%"><img src="hardware/docs/pcb%20top.png" alt="Controller board" width="100%"></td>
+<td valign="middle">
+<b>Artist</b><br>Kitty Kraus<br><br>
+<b>Original controller</b><br>Roman Zulek<br><br>
+<b>Controller revision</b><br>Fubbi Karlsson<br>House of North, 2026
+</td>
+</tr>
+</table>
 
 A motor gives the pendulum a push now and then, rests, and every so often takes a long pause — never quite the same twice. This page explains how to run the piece. Technical details are in [HARDWARE.md](hardware/HARDWARE.md) and [FIRMWARE.md](firmware/FIRMWARE.md).
 
