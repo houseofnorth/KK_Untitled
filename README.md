@@ -1,4 +1,4 @@
-# Kitty Kraus — Untitled
+# Untitled
 
 <table>
 <tr>
