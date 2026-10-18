@@ -130,7 +130,7 @@ Ground the shield at **one end only — the controller end**. VersiDrive manual,
 - Twist each input with its own GND: RUN_IN with pin 2, BTN_IN with pin 4.
 - BRAKE / MOVE / VFD_OK LED anodes on pins 5–7, all cathodes to GND pin 8.
 - SYS LED: anode to pin 9 (SYS+), cathode to pin 10 (SYS−) — not to GND.
-- Panel LEDs fitted: red (MOVE), amber (VFD_OK), green (BRAKE), blue (SYS). Blue and true green (Vf ≈ 3 V) run dimmer on 3.3 V through 220 Ω; raise LED brightness on `/tech`, or drop that resistor to ~56 Ω.
+- Panel LEDs fitted: red (MOVE), amber (VFD_OK), green (BRAKE), blue (SYS). Blue and true green (Vf ≈ 3 V) run dimmer on 3.3 V through 220 Ω; set each LED's level on `/overrides`, or drop that resistor. **Fitted:** R14 (panel green, PLED_BRAKE) changed 220 → 39 Ω, ≈ 15 mA (0.6 V across R14); the others are balanced down on `/overrides` to match.
 - Route away from the IRM mains input and the 24 V brake wires; cross at right angles. Leave slack to unplug, label wires, cable-tie near the plug.
 
 ### USB with the IRMs connected
@@ -148,7 +148,7 @@ Photograph every parameter before changing anything. P-15 and above need **P-14 
 | P-18 | 1 | Relay T10/T11 = drive ready (fail-safe, read as VFD_OK) |
 | P-25 | 9 | T8 = output current, 0–10 V = 0–200 % of P-08 |
 | P-03 | short (~0.3 s) | A push lasts 0.2–0.9 s; a 5 s ramp hides it |
-| P-07/08/09 | motor nameplate | P-08 also goes into `/tech` for the A readout |
+| P-07/08/09 | motor nameplate | P-08 also goes into `/overrides` for the A readout |
 
 ## Bench test without the drive
 

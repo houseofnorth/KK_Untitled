@@ -5,13 +5,13 @@
 <td width="66%"><img src="hardware/docs/pcb%20top.png" alt="Controller board" width="100%"></td>
 <td valign="middle">
 <b>Artist</b><br>Kitty Kraus<br><br>
-<b>Original controller</b><br>Roman Zulek<br><br>
+<b>Original controller</b><br>Roman Zulek, 2011<br><br>
 <b>Controller revision</b><br>Fubbi Karlsson<br>House of North, 2026
 </td>
 </tr>
 </table>
 
-A motor gives the pendulum a push now and then, rests, and every so often takes a long pause — never quite the same twice. This page explains how to run the piece. Technical details are in [Hardware.md](hardware/Hardware.md) and [Firmware.md](firmware/Firmware.md).
+The ESP32-C3 controls the electromagnetic actuation of the pendulum system according to timed intervals. A motor gives the pendulum a push now and then, rests, and every so often takes a long pause — never quite the same twice. This page explains how to run the piece. Technical details are in [Hardware.md](hardware/Hardware.md) and [Firmware.md](firmware/Firmware.md).
 
 > [!WARNING]
 > **Keep clear of the pendulum before it starts.** The arm can move suddenly and with great force, and it can hit anyone within its swing. Before you switch the mains on or hold RUN / STOP, make sure **nobody is in the swing area**. The blinking red light is your last warning — the first push follows straight after. To stop it at any time, press **RUN / STOP**.
@@ -22,7 +22,7 @@ A motor gives the pendulum a push now and then, rests, and every so often takes 
 2. [The panel](#the-panel)
 3. [The settings page (phone)](#the-settings-page-phone) — [Main page](#main-page) · [Sliders](#sliders) · [Advanced settings](#advanced-settings)
 4. [Help](#help)
-5. Technical: [Hardware](hardware/Hardware.md) · [Firmware](firmware/Firmware.md)
+5. Technical: [Hardware](hardware/Hardware.md) · [Firmware](firmware/Firmware.md) · [Updating the firmware](firmware/README.md)
 
 ---
 
@@ -89,17 +89,20 @@ Top row: four status lights. Bottom row: two buttons and two cable sockets. Each
 
 If amber keeps blinking, switch the mains off for a minute and on again.
 
+**All four lights chasing** left to right (red → green → amber → blue): new software is being installed. Don't switch off.
+
 **Blue — Wi-Fi**
 
 | Blue light | Meaning |
 |---|---|
+| Blinking (first 2 s after mains on) | Starting up |
 | On | Wi-Fi is on — you can open the settings page |
+| Slow breathing | A phone is connected |
 | Off | Wi-Fi is off. Press **WIFI ENABLE** to switch it on |
-| Fast blinking | New software is being installed. Don't switch off. |
 
 ## The settings page (phone)
 
-1. Press **WIFI ENABLE**. The blue light comes on.
+1. If the blue light is off, press **WIFI ENABLE** — it comes on. If it's already on, Wi-Fi is up and you can go straight to step 2.
 2. On your phone, join the Wi-Fi **Untitled** (password: **deltitnu**).
 3. Open **http://192.168.4.1** in the browser. Turn mobile data off if the page doesn't load.
 
@@ -132,13 +135,13 @@ Tip: change one slider at a time and watch a few pushes before you save.
 
 ### Advanced settings
 
-The link **Advanced settings** at the bottom leads to the technician page. It shows the panel lights, counters, the drive signals and every setting in numbers, and it is where the software is updated. You normally don't need it — only change things there if you know what they do.
+**Advanced** at the top of the page leads to the technician page. It shows the panel lights, counters, the drive signals and every setting in numbers, and it is where the software is updated. You normally don't need it — only change things there if you know what they do.
 
 ## Help
 
 | Problem | Try |
 |---|---|
-| Nothing happens after mains on | Is the green light on after a few seconds? If not, press and hold RUN / STOP for 2 s. If the red light stays off, check that *Autostart* is ticked in Advanced settings. |
+| Nothing happens after mains on | Is the green light on after a few seconds? If not, press and hold RUN / STOP for 2 s — Autostart may have been switched off for maintenance. |
 | Amber blinking fast | Drive fault — the piece waits. Switch mains off for a minute, then on. |
 | Settings page won't load | Press WIFI ENABLE again, check you are on the **Untitled** Wi-Fi, turn mobile data off, type `http://192.168.4.1`. |
 | Arm moves weakly | See the *Site Fault Check* in [Specs](Specs/). |

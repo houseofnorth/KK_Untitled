@@ -27,9 +27,15 @@ input[type=number]{width:110px;padding:10px;border-radius:8px;border:1px solid #
 input[type=checkbox]{width:26px;height:26px;accent-color:var(--acc)}
 input[type=file]{width:100%;margin:6px 0 10px;color:var(--dim)}
 progress{width:100%;height:10px}
+a{color:inherit}
+.nav{display:flex;gap:18px;margin:2px 0 12px;font-size:12px;letter-spacing:.12em;text-transform:uppercase}
+.nav a{color:#777;text-decoration:none;padding:4px 0}.nav a.on{color:var(--fg);border-bottom:1px solid var(--acc)}
+.foot{text-align:center;font-size:12px;letter-spacing:.12em;text-transform:uppercase;margin:4px 0 20px}.foot a{color:#666;text-decoration:none;margin:0 9px}
 #msg{position:fixed;left:16px;right:16px;bottom:16px;background:#333;padding:12px;border-radius:10px;text-align:center;display:none}
 </style></head><body>
-<h1>KITTY KRAUS — UNTITLED</h1><div class="sub">Advanced settings &middot; <span id="fw"></span> &middot; <a href="/" style="color:var(--acc)">back to main page</a></div>
+<h1>KITTY KRAUS — UNTITLED</h1>
+<nav class="nav"><a href="/">Main</a><a class="on" href="/tech">Advanced</a><a href="/overrides">Overrides</a><a href="/setup">Setup</a></nav>
+<div class="sub">Advanced settings &middot; <span id="fw"></span></div>
 
 <div class="card">
  <div class="phase" id="phase">&hellip;</div>
@@ -63,7 +69,6 @@ progress{width:100%;height:10px}
 </div>
 
 <div class="card"><h2>Settings</h2><form id="f"></form>
- <h2 style="margin-top:16px">V2 options</h2><form id="o"></form>
  <!-- Future features (V3, strength output): hidden until the GP8101S is fitted. Remove display:none to show. -->
  <div id="future" style="display:none;margin-top:22px;padding:12px;border:1px dashed #555;border-radius:10px;opacity:.6">
   <h2 style="margin:0 0 4px">Future features · V3</h2>
@@ -83,6 +88,7 @@ progress{width:100%;height:10px}
  <progress id="pr" value="0" max="100"></progress>
  <div class="btns" style="margin-top:10px"><button onclick="ota()">Upload</button><button onclick="reboot()">Reboot</button></div>
 </div>
+<div class="foot"><a href="/overrides">Overrides</a><a href="/setup">Setup</a></div>
 <div id="msg"></div>
 
 <script>
@@ -93,26 +99,19 @@ const F=[
  ['hangTime','Pause length min','s',1000,'rest after a pause starts'],['hangTimeMax','Pause length max','s',1000,''],
  ['warnMs','Move warning','s',1000,'LED blinks faster before each kick, 0 = off'],
  ['brakeRelease','Brake release wait','ms',1,'before first kick'],['brakeEngage','Brake engage wait','ms',1,'after stop'],
- ['ledPct','LED brightness','%',1,''],['apMinutes','Wi-Fi on after boot','min',1,'0 = always on']];
-const O=[
- ['useVfdOk','Stop on VFD fault','on',1,'brake on until drive OK'],['okResume','Resume after drive OK for','s',1000,''],
- ['autostart','Autostart after power-up','on',1,'mains on starts the piece · untick for installation / maintenance'],
- ['softKicks','Soft start kicks','kicks',1,'50→100 %, 0 = off'],
- ['motorMa','Motor rated current (VFD P-08)','A',1000,'for the A readout, needs VFD P-25 = 9'],
- ['vfdLedPct','Amber LED level (temporary)','%',1,'of LED brightness · tuning only, removed later'],
- ];
+ ['apMinutes','Wi-Fi on after boot','min',1,'0 = always on']];
 const X=[
  ['useStr','Strength output','on',1,'GPIO9 → GP8101S (0–10 V) → VFD AI1 (T6)'],
  ['strInv','Strength output inverted','on',1,'off for GP8101S; on only for opto modules (DIN− → GPIO9)'],
  ['strMin','Strength min','%',1,'of 0–10 V, random per push'],['strMax','Strength max','%',1,'']];
-const A=F.concat(O,X);
+const A=F.concat(X);
 const $=id=>document.getElementById(id);
 function msg(t){const m=$('msg');m.textContent=t;m.style.display='block';clearTimeout(m.t);m.t=setTimeout(()=>m.style.display='none',2500)}
 function fmt(ms){if(ms<0)return '–';let s=Math.round(ms/1000);if(s<60)return s+' s';let m=Math.floor(s/60);s%=60;if(m<60)return m+' min '+s+' s';return Math.floor(m/60)+' h '+m%60+' min'}
 const fld=([k,l,u,sc,h])=>u=='on'
  ?`<label><div>${l}${h?' <small>'+h+'</small>':''}</div><input type="checkbox" id="${k}"></label>`
  :`<label><div>${l} <small>${u}${h?' · '+h:''}</small></div><input type="number" inputmode="decimal" step="any" min="0" id="${k}"></label>`;
-$('f').innerHTML=F.map(fld).join('');$('o').innerHTML=O.map(fld).join('');$('x').innerHTML=X.map(fld).join('');
+$('f').innerHTML=F.map(fld).join('');$('x').innerHTML=X.map(fld).join('');
 let rev=-1,ed=new Set();   // ed = fields edited here and not saved yet
 A.forEach(([k])=>$(k).addEventListener('input',()=>ed.add(k)));
 let C={};

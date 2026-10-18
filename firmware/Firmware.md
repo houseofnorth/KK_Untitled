@@ -1,6 +1,6 @@
 # Firmware — `firmware/Untitled/`
 
-Installation firmware for the V2 controller (Seeed XIAO ESP32C3). Port of Roman Zulek's original Arduino logic (push / rest / long pause) plus panel buttons and lights, a Wi-Fi settings page and over-the-air updates. Current version: see `FW_VERSION` at the top of [`Untitled.ino`](Untitled/Untitled.ino) (1.6.1).
+Installation firmware for the V2 controller (Seeed XIAO ESP32C3). Port of Roman Zulek's original Arduino logic (push / rest / long pause) plus panel buttons and lights, a Wi-Fi settings page and over-the-air updates. Current version: see `FW_VERSION` at the top of [`Untitled.ino`](Untitled/Untitled.ino) (1.7.1).
 
 How to use the piece: [README](../README.md) · Board, wiring, drive settings: [Hardware.md](../hardware/Hardware.md)
 
@@ -10,7 +10,9 @@ How to use the piece: [README](../README.md) · Board, wiring, drive settings: [
 |---|---|
 | `Untitled.ino` | Logic, inputs, LEDs, settings storage, web API, OTA |
 | `artist.h` | Main page `/` — status, Start/Stop, sliders, EN/DE |
-| `page.h` | Technician page `/tech` — status lights, stats, inputs, all settings, firmware upload |
+| `page.h` | Technician page `/tech` — status lights, stats, inputs, settings, firmware upload |
+| `overrides.h` | Overrides page `/overrides` — LED levels, LED test, VersiDrive (VFD check, motor current), V2 options (Autostart, soft start) |
+| `setup.h` | Setup page `/setup` — record of the motor nameplate and VersiDrive parameters |
 
 ## Build and flash
 
@@ -20,6 +22,7 @@ Board **XIAO_ESP32C3**, esp32 Arduino core 3.x. Open `firmware/Untitled/Untitled
 arduino-cli compile --fqbn esp32:esp32:XIAO_ESP32C3 --output-dir build/Untitled firmware/Untitled
 ```
 
+- Step by step for updating: [README.md](README.md) in this folder.
 - **Over the air (normal):** `/tech` → Firmware update → upload `Untitled.ino.bin` (not `merged.bin`). The piece stops during the update and restarts; with Autostart on it starts again by itself.
 - **USB:** Arduino IDE Upload, or `esptool.py --chip esp32c3 write_flash 0x0 Untitled.ino.merged.bin`. Plug USB in before the IRM supplies are on (see Hardware.md, *USB with the IRMs connected*).
 - The current build is kept here as [`Untitled.ino.bin`](Untitled.ino.bin) — that's the file to upload. After compiling, copy `build/Untitled/Untitled.ino.bin` over it. `build/` itself is local only (git-ignored).
@@ -48,18 +51,23 @@ arduino-cli compile --fqbn esp32:esp32:XIAO_ESP32C3 --output-dir build/Untitled 
 | Red MOVE | D6 | solid = pushing · speeding-up blink = warning before a push · breathing (3 s) = running, resting · off = stopped |
 | Green BRAKE | D5 | on = brake released |
 | Amber VFD_OK | D3 | on = drive OK · breathing = drive not OK, stopped · 2 Hz = drive not OK while it should run |
-| Blue SYS | D8 (active low) | on = AP up · fast blink = OTA update |
+| Blue SYS | D8 (active low) | 4 Hz blink = booting (first 2 s) · on = AP up · breathing = phone connected · off = Wi-Fi off |
+| All four | | chase red → green → amber → blue (120 ms a step) = OTA upload in progress |
 
-All LEDs scale with *LED brightness* (default 50 %). Amber also runs at *Amber LED level* (temporary tuning setting, default 60 %; to be hard-coded). Breathing always starts at full brightness so it joins smoothly onto a push or blink.
+Each LED has its own level, set on `/overrides` (defaults red 50 %, green 50 %, amber 30 %, blue 50 %). Breathing runs from 10 % to 100 % of that level and always starts at full, so it joins smoothly onto a push or blink.
 
 ## Wi-Fi and pages
 
 - Access point **`Untitled`**, password in `AP_PASS` (`Untitled.ino`). Page at `http://192.168.4.1` or `http://untitled.local`.
 - AP on at power-up, off after *Wi-Fi on after boot* (15 min, 0 = always on), never while a phone is connected. WIFI ENABLE or *Reset 15 min* restarts it.
 - Main page `/`: live changes apply at once, **Save** stores them in flash, **Undo** returns to the saved state.
-- `/tech`: settings apply on **Save**; *Defaults* restores factory values.
+- `/tech`: settings apply on **Save**; *Defaults* restores factory values (including the `/overrides` ones).
+- Nav bar: the main page shows *Main · Advanced*; `/tech`, `/overrides` and `/setup` show all four. The main page footer links to House of North (needs normal internet).
+- `/overrides`: linked only from the technician pages. Changes apply at once, **Save** keeps them, **Undo** returns to the saved state. *LED test* holds all four LEDs solid at their levels; it ends 10 s after the page stops pinging (untick, or leave the page).
 
-### Settings (`/tech`) and defaults
+### Settings and defaults
+
+`/tech`:
 
 | Setting | Default |
 |---|---|
@@ -69,14 +77,20 @@ All LEDs scale with *LED brightness* (default 50 %). Amber also runs at *Amber L
 | Pause length min / max | 60 / 60 s |
 | Move warning | 3 s |
 | Brake release wait / engage wait | 1250 / 1250 ms |
-| LED brightness | 50 % |
 | Wi-Fi on after boot | 15 min |
-| Stop on VFD fault | on |
+
+`/overrides`:
+
+| Setting | Default |
+|---|---|
+| Red / green / amber / blue LED level | 50 / 50 / 30 / 50 % |
+| Stop on VFD fault | on — untick to test without the drive, tick again before going live |
 | Resume after drive OK for | 5 s |
 | Autostart after power-up | on — untick for installation / maintenance |
 | Soft start kicks | 0 (off) — first N pushes ramp 50 → 100 % |
-| Motor rated current (VFD P-08) | 0 — enter it for the A readout |
-| Amber LED level (temporary) | 60 % |
+| Motor rated current (VFD P-08) | 0 — enter it for the A readout on `/tech`; same value as P-08 on `/setup` |
+
+`/setup` is a record of what the motor and drive are set to — the controller has no data link to the VersiDrive and cannot change its parameters. Fields: motor nameplate (V, A, kW, rpm, Hz, cos φ, star/delta), P-01 … P-25, brake release / engage time, peak push current, drive model, notes. Stored as one JSON string (`/api/setup`, NVS key `setup`, max 2500 chars). **P-08 is not part of that record**: it is the config value *Motor rated current*, so editing it on either page changes both.
 
 ### Readouts
 
@@ -85,11 +99,11 @@ All LEDs scale with *LED brightness* (default 50 %). Amber also runs at *Amber L
 
 ### Web API
 
-`GET /api/status`, `GET /api/config` · `POST /api/config` (apply + save), `/api/live` (apply only), `/api/revert`, `/api/defaults`, `/api/start`, `/api/stop`, `/api/kick` (push after the warning), `/api/wifi` (restart AP timer), `/api/reboot`, `/update` (OTA upload).
+`GET /api/status`, `GET /api/config` · `POST /api/config` (apply + save), `/api/live` (apply only), `/api/revert`, `/api/defaults`, `/api/start`, `/api/stop`, `/api/kick` (push after the warning), `/api/wifi` (restart AP timer), `/api/reboot`, `/api/ledtest` (on=1, LED test for 10 s), `GET/POST /api/setup` (site record, `d` = JSON), `/update` (OTA upload).
 
 ## Settings storage
 
-Settings live in NVS (`Preferences`, namespace `kk`) as one struct with a version number (`CFG_VERSION`). On update, older versions are migrated: tuned values are kept and new fields get their defaults. Migrations so far switch on *Stop on VFD fault* (v7) and *Autostart* (v10).
+Settings live in NVS (`Preferences`, namespace `kk`) as one struct with a version number (`CFG_VERSION`). On update, older versions are migrated: tuned values are kept and new fields get their defaults. Migrations so far switch on *Stop on VFD fault* (v7) and *Autostart* (v10), and set the four LED levels from the old *LED brightness* / *Amber LED level* (v11).
 
 ## Future (V3): push strength output — hidden
 

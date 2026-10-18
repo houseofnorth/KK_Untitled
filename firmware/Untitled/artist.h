@@ -54,11 +54,14 @@ button:disabled{opacity:.35}button:active{opacity:.6}
 foot{display:block;text-align:center;margin-top:26px}
 .wifi{display:flex;justify-content:space-between;align-items:center;gap:12px;color:var(--dim);font-size:15px}
 .wifi button{border:1px solid var(--line);background:none;color:var(--fg);padding:10px 14px;font-size:15px;font-weight:600;flex:none}
-foot a{color:var(--dim);font-size:14px}
+foot a{color:#55555a;font-size:12px;text-decoration:none;letter-spacing:.06em}
+.nav{display:flex;gap:18px;margin:-6px 0 16px;font-size:12px;letter-spacing:.12em;text-transform:uppercase}
+.nav a{color:var(--dim);text-decoration:none;padding:4px 0}.nav a.on{color:var(--fg);border-bottom:1px solid var(--acc)}
 #msg{position:fixed;left:16px;right:16px;top:16px;background:#333;padding:12px;border-radius:12px;text-align:center;opacity:0;transition:opacity .3s;pointer-events:none}
 #msg.show{opacity:1}
 </style></head><body>
 <header><h1>KITTY KRAUS — UNTITLED</h1><div class="lang"><button id="lEN" onclick="setLang('en')">EN</button><button id="lDE" onclick="setLang('de')">DE</button></div></header>
+<nav class="nav"><a class="on" href="/" data-t="main"></a><a href="/tech" data-t="adv"></a></nav>
 
 <div class="card">
  <div class="now" id="now">&hellip;</div>
@@ -73,7 +76,7 @@ foot a{color:var(--dim);font-size:14px}
 <div id="sets"></div>
 
 <div class="card wifi"><span id="wf"></span><button id="wfb" onclick="wifiStay()" data-t="wifiStay"></button></div>
-<foot><a href="/tech" data-t="tech"></a></foot>
+<foot><a href="https://north-berlin.com" target="_blank" rel="noopener">House of North GmbH</a></foot>
 
 <div id="save"><div><p data-t="unsaved"></p><div class="btns">
  <button onclick="undo()" data-t="undo"></button><button class="go" onclick="save()" data-t="save"></button>
@@ -93,7 +96,7 @@ en:{pushing:'Pushing',warn:'About to push',resting:'Resting',pause:'Long pause',
  plen:'Long pause length',plenD:'How long a long pause lasts, random between min and max.',
  unsaved:'Changes are live, but not saved yet',undo:'Undo',save:'Save',saved:'Saved · kept after power-off',undone:'Back to saved settings',
  wifiOff:'Wi-Fi turns off in ',wifiConn:'Wi-Fi turns off when you disconnect',wifiAlways:'Wi-Fi always on',wifiStay:'Reset to 15 min',wifiReset:'Wi-Fi timer reset',
- tech:'Advanced settings'},
+ tech:'Advanced settings',main:'Main',adv:'Advanced'},
 de:{pushing:'Schub',warn:'Gleich geht’s los',resting:'Ruhe',pause:'Lange Pause',starting:'Startet',stopping:'Stoppt',stopped:'Gestoppt',
  waitVfd:'Wartet · Störung Antrieb',offline:'Keine Verbindung',
  nextIn:'Nächster Schub in ',start:'Start',stop:'Stopp',pushNow:'Jetzt schieben',
@@ -105,7 +108,7 @@ de:{pushing:'Schub',warn:'Gleich geht’s los',resting:'Ruhe',pause:'Lange Pause
  plen:'Länge der langen Pause',plenD:'Wie lange eine lange Pause dauert, zufällig zwischen Min und Max.',
  unsaved:'Änderungen sind aktiv, aber noch nicht gespeichert',undo:'Rückgängig',save:'Speichern',saved:'Gespeichert · bleibt nach dem Ausschalten',undone:'Zurück zu den gespeicherten Werten',
  wifiOff:'WLAN aus in ',wifiConn:'WLAN geht aus, wenn du die Verbindung trennst',wifiAlways:'WLAN immer an',wifiStay:'Auf 15 Min. zurücksetzen',wifiReset:'WLAN-Timer zurückgesetzt',
- tech:'Erweiterte Einstellungen'}};
+ tech:'Erweiterte Einstellungen',main:'Start',adv:'Erweitert'}};
 // id, config keys, low, high (ms, log scale), can be off, pct = linear 0..100 %, sh = soft/hard ends
 const S=[
  {id:'push', k:['spinMin','spinMax'],lo:50,hi:5000,sh:1},

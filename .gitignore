@@ -5,3 +5,4 @@ firmware/**/build/
 # local leftovers, not published
 _archive/
 *.xls
+bench/

@@ -1,10 +1,10 @@
 /*
 ------------------------------------------------------------
 UNTITLED – Controller firmware (XIAO ESP32C3)
-Version 1.6.1  (2026-10-15)  – keep in step with FW_VERSION below
+Version 1.7.1  (2026-10-18)  – keep in step with FW_VERSION below
 
 Artist:          Kitty Kraus
-Original code:   Roman Zulek (Arduino)
+Original code:   Roman Zulek (Arduino), 2011
 Port / update:   Fubbi Karlsson, House of North, 2026
 
 Behaviour (same as original):
@@ -15,17 +15,20 @@ Behaviour (same as original):
   Run off      -> MOVE off, brake engaged, wait brakeEngage
 
 Added: Wi-Fi AP + mobile web page (tune, save, start/stop, test kick,
-stats, OTA upload). Artist page at /, technician page at /tech.
+stats, OTA upload). Artist page at /, technician page at /tech,
+overrides page /overrides: per-LED levels, LED test, VersiDrive check, V2 options;
+setup page /setup: record of motor nameplate + drive parameters (P-08 = motorMa).
+Main page nav: Main · Advanced. /tech, /overrides, /setup nav: all four.
 Live changes apply at once; Save stores them, Undo returns to the saved state.
 AP turns off apMinutes after it starts (0 = always on),
 but not while a phone is connected.
 
-V2 options – switched on /tech, saved in flash (useVfdOk and autostart ON by default, rest OFF):
+V2 options – on /overrides, saved in flash (useVfdOk and autostart ON by default, rest OFF):
   useVfdOk   VFD "drive OK" relay (VFD_OK_IN). Not OK -> move off, brake engaged.
              Resumes once OK has been stable for okResume ms. Also holds the
              piece after power-up until the drive reports ready.
   autostart  ON by default (1.6.0): mains on starts the piece (warning blink, then first push).
-             Untick on /tech for installation / maintenance: the piece then stays stopped
+             Untick on /overrides for installation / maintenance: the piece then stays stopped
              after power-up until RUN is held 2 s or Start is pressed.
   softKicks  First N kicks after every start ramp from 50 % to 100 % length (0 = off).
 
@@ -49,9 +52,11 @@ Strength output – FUTURE FEATURE (V3), not fitted. hidden on /tech until fitte
 Always active (indication only, cannot stop the piece):
   LED_VFD_OK  on = drive OK, breathing = not OK / not connected (stopped),
               2 Hz blink = not OK while the piece should run
-  LED_VFD_OK  runs at vfdLedPct (TEMPORARY /tech setting, default 60 %) of the LED brightness
+  LED levels  each LED has its own level, ledRed / ledGreen / ledAmber / ledBlue (1.7.0, /overrides)
   LED_MOVE    solid = push, speeding-up blink = warning, slow breathing = running, off = stopped
-  LED_SYS     Wi-Fi: on while the AP is up, off when Wi-Fi is off, fast blink during OTA
+  LED_SYS     Wi-Fi: blink while booting, on = Wi-Fi up, breathing = a phone is connected,
+              off = Wi-Fi off
+  OTA update  all four LEDs chase left to right (red, green, amber, blue)
   VFD AO      live VersiDrive analog output + peak per kick on the web page
 
 Board: XIAO_ESP32C3 (esp32 core 3.x).
@@ -66,8 +71,10 @@ Board: XIAO_ESP32C3 (esp32 core 3.x).
 #include <esp_random.h>
 #include "page.h"     // technician page  /tech
 #include "artist.h"   // artist page      /
+#include "overrides.h" // overrides page /overrides
+#include "setup.h"    // setup record   /setup
 
-#define FW_VERSION "1.6.1"
+#define FW_VERSION "1.7.1"
 
 // --- Pins (named after the schematic nets) ---
 constexpr uint8_t PIN_K1_GATE    = D10; // GPIO10 net K1_GATE   -> Q1 -> K1 : brake coil  (HIGH = brake released)
@@ -88,6 +95,7 @@ constexpr uint8_t  STR_BITS      = 10;
 constexpr float    AO_SCALE      = 7.8f;  // V at VFD terminal 8 = V at pin * 7.8
 constexpr uint32_t AO_TAIL_MS    = 1500;  // keep tracking the peak this long after a kick ends
 constexpr uint32_t RUN_HOLD_MS   = 2000;  // hold RUN this long to start
+constexpr uint32_t BOOT_BLINK_MS = 2000;  // blue LED blinks this long after power-up
 
 // --- Wi-Fi ---
 const char *AP_SSID  = "Untitled";
@@ -101,7 +109,7 @@ struct Config {
   uint32_t dropMin, dropMax;          // ms
   uint32_t hangEvery, hangTime;       // ms (hangEvery 0 = no pause)
   uint32_t brakeRelease, brakeEngage; // ms
-  uint32_t ledPct;                    // 0..100
+  uint32_t ledPct;                    // unused since 1.7.0 (per-LED levels), kept for layout
   uint32_t apMinutes;                 // 0 = AP always on
   // --- added in CFG_VERSION 2 (V2 options) ---
   uint32_t useVfdOk;                  // 0/1
@@ -121,8 +129,10 @@ struct Config {
   uint32_t useStr;                    // 0/1 strength PWM on GPIO9
   uint32_t strInv;                    // 1 = active low (DIN+ -> 3.3 V, DIN- -> GPIO9)
   uint32_t strMin, strMax;            // % of 0-10 V, random per push
-  // --- added in CFG_VERSION 9 (TEMPORARY, for tuning; hardcode later) ---
-  uint32_t vfdLedPct;                 // amber VFD LED level, % of ledPct
+  // --- added in CFG_VERSION 9 ---
+  uint32_t vfdLedPct;                 // unused since 1.7.0, kept for layout
+  // --- added in CFG_VERSION 11: per-LED levels, set on /overrides ---
+  uint32_t ledRed, ledGreen, ledAmber, ledBlue;   // % 0..100
 };
 const Config DEFAULTS = {200, 900, 10000, 45000, 600000, 60000, 1250, 1250, 50, 15,
                          1, 5000, 0, 0, 0,
@@ -130,8 +140,10 @@ const Config DEFAULTS = {200, 900, 10000, 45000, 600000, 60000, 1250, 1250, 50, 
                          3000,
                          1,
                          0, 0, 0, 40, 100,
-                         60};
-constexpr uint32_t CFG_VERSION = 10;  // 9: + vfdLedPct (temporary) · 10: autostart on by default
+                         60,
+                         50, 50, 30, 50};
+constexpr uint32_t CFG_VERSION = 11;  // 9: + vfdLedPct · 10: autostart on by default · 11: per-LED levels
+constexpr size_t   CFG_V10_SIZE = 25 * sizeof(uint32_t);
 constexpr size_t   CFG_V9_SIZE = 25 * sizeof(uint32_t);
 constexpr size_t   CFG_V8_SIZE = 24 * sizeof(uint32_t);
 // 7: Stop on VFD fault on by default · 8: strength output active high (GP8101S)
@@ -196,18 +208,18 @@ uint32_t runDownAt = 0;
 bool     runArmed = false;               // press began while stopped -> may start after RUN_HOLD_MS
 
 // ---------- Outputs ----------
-uint32_t ledDuty() { return (255 * cfg.ledPct) / 100; }
+uint32_t duty(uint32_t pct) { return (255 * pct) / 100; }   // LED % -> 8-bit PWM
+bool     ledTest = false;          // /overrides: all LEDs solid at their levels
+uint32_t ledTestUntil = 0;         // test ends by itself unless the page keeps pinging
 
 void setBrakeReleased(bool on) {
   brakeReleased = on;
-  digitalWrite(PIN_K1_GATE, on ? HIGH : LOW);
-  ledcWrite(PIN_LED_BRAKE, on ? ledDuty() : 0);
+  digitalWrite(PIN_K1_GATE, on ? HIGH : LOW);   // brake LED follows in tickIndicators
 }
 
 void setMove(bool on) {
   moveOn = on;
-  digitalWrite(PIN_K2_GATE, on ? HIGH : LOW);
-  ledcWrite(PIN_LED_MOVE, on ? ledDuty() : 0);
+  digitalWrite(PIN_K2_GATE, on ? HIGH : LOW);   // move LED follows in tickIndicators
 }
 
 void safeOutputs() { setMove(false); setBrakeReleased(false); }
@@ -255,6 +267,8 @@ void clampConfig(Config &c) {
   clamp(c.motorMa, 0, 50000);      clamp(c.useStr, 0, 1);  clamp(c.strInv, 0, 1);
   clamp(c.strMin, 0, 100);         clamp(c.strMax, 0, 100);
   clamp(c.vfdLedPct, 0, 100);
+  clamp(c.ledRed, 0, 100);   clamp(c.ledGreen, 0, 100);
+  clamp(c.ledAmber, 0, 100); clamp(c.ledBlue, 0, 100);
   if (c.strMax < c.strMin) std::swap(c.strMin, c.strMax);
   clamp(c.softKicks, 0, 50);
   clamp(c.hangEveryMax, 60000, 86400000); clamp(c.hangTimeMax, 0, 3600000);
@@ -284,12 +298,16 @@ void loadConfig() {
              (ver == 3 && len == CFG_V3_SIZE) || (ver == 4 && len == CFG_V4_SIZE) ||
              (ver == 5 && len == CFG_V5_SIZE) || (ver == 6 && len == CFG_V6_SIZE) ||
              (ver == 7 && len == CFG_V7_SIZE) || (ver == 8 && len == CFG_V8_SIZE) ||
-             (ver == 9 && len == CFG_V9_SIZE)) {
+             (ver == 9 && len == CFG_V9_SIZE) || (ver == 10 && len == CFG_V10_SIZE)) {
     // keep tuned settings; fields added later keep their DEFAULTS
     prefs.getBytes("cfg", &cfg, len);
     if (ver < 7) cfg.useVfdOk = 1;     // 1.5.1: Stop on VFD fault on by default
     if (ver < 10) cfg.autostart = 1;   // 1.6.0: mains on starts the piece
     if (ver < 8) cfg.strInv = 0;       // 1.5.3: GP8101S takes the PWM active high
+    if (ver < 11) {                    // 1.7.0: per-LED levels start from the old global level
+      cfg.ledRed = cfg.ledGreen = cfg.ledBlue = cfg.ledPct;
+      cfg.ledAmber = ver >= 9 ? cfg.ledPct * cfg.vfdLedPct / 100 : cfg.ledPct;
+    }
     if (ver < 3) {                     // pause ranges start as the old fixed values
       cfg.hangEveryMax = cfg.hangEvery ? cfg.hangEvery : DEFAULTS.hangEveryMax;
       cfg.hangTimeMax  = cfg.hangTime;
@@ -457,16 +475,34 @@ bool moveWarning(uint32_t now) {
          (int32_t)(nextKick - now) <= (int32_t)cfg.warnMs;
 }
 
-// Slow breathing: 10 % .. 100 % of the LED brightness setting, cosine fade.
+// Slow breathing: 10 % .. 100 % of the LED's level (full = its duty), cosine fade.
 // t0 = when breathing started; it starts at full brightness and fades down,
 // so it joins smoothly onto a solid or blinking LED.
-uint32_t breathe(uint32_t now, uint32_t period, uint32_t t0 = 0) {
+uint32_t breathe(uint32_t now, uint32_t period, uint32_t t0, uint32_t full) {
   float x = 0.5f + 0.5f * cosf(6.2831853f * (float)((now - t0) % period) / period);   // 1..0..1
   float lvl = 0.10f + 0.90f * x * x;                                                   // eased, perceptual
-  return (uint32_t)(ledDuty() * lvl);
+  return (uint32_t)(full * lvl);
 }
 
 void tickIndicators(uint32_t now) {
+  const uint32_t R = duty(cfg.ledRed), G = duty(cfg.ledGreen), A = duty(cfg.ledAmber), B = duty(cfg.ledBlue);
+  if (ledTest && !reached(now, ledTestUntil)) {   // /overrides LED test: all solid at their levels
+    ledcWrite(PIN_LED_MOVE, R); ledcWrite(PIN_LED_BRAKE, G);
+    ledcWrite(PIN_LED_VFD_OK, A); ledcWrite(PIN_LED_SYS, 255 - B);
+    return;
+  }
+  ledTest = false;
+  if (otaActive) {                              // firmware upload: chase left to right, red -> blue
+    const uint8_t pins[4] = {PIN_LED_MOVE, PIN_LED_BRAKE, PIN_LED_VFD_OK, PIN_LED_SYS};
+    const uint32_t lvl[4] = {R, G, A, B};
+    uint8_t step = (now / 120) % 4;
+    for (uint8_t i = 0; i < 4; i++) {
+      uint32_t d = i == step ? lvl[i] : (i == (step + 3) % 4 ? lvl[i] / 5 : 0);   // lit + short tail
+      ledcWrite(pins[i], pins[i] == PIN_LED_SYS ? 255 - d : d);
+    }
+    return;
+  }
+  ledcWrite(PIN_LED_BRAKE, brakeReleased ? G : 0);
   // VFD LED: on = drive OK, breathing = not OK / not connected while stopped,
   //          2 Hz blink = not OK while the piece should run (fault)
   static uint32_t vbStart = 0;
@@ -475,13 +511,24 @@ void tickIndicators(uint32_t now) {
   if (vb && !vbWas) vbStart = now;            // breathing starts at full brightness
   vbWas = vb;
   uint32_t vDuty;
-  if (inVfdOk.state)  vDuty = ledDuty();
-  else if (userRun)   vDuty = blink(now, 500) ? ledDuty() : 0;
-  else                vDuty = breathe(now, 3000, vbStart);
-  ledcWrite(PIN_LED_VFD_OK, vDuty * cfg.vfdLedPct / 100);   // amber dimmed to match the green
-  // System LED (active low) = Wi-Fi indicator: on while the AP is up, fast blink during OTA
-  bool sOn = otaActive ? blink(now, 100) : apOn;
-  ledcWrite(PIN_LED_SYS, sOn ? 255 - ledDuty() : 255);
+  if (inVfdOk.state)  vDuty = A;
+  else if (userRun)   vDuty = blink(now, 500) ? A : 0;
+  else                vDuty = breathe(now, 3000, vbStart, A);
+  ledcWrite(PIN_LED_VFD_OK, vDuty);
+  // System LED (active low) = Wi-Fi: blink while booting, on = AP up, breathing = phone
+  // connected, off = Wi-Fi off (OTA: chase, handled above)
+  static uint32_t lastSta = 0, sbStart = 0;
+  static uint8_t  sta = 0;
+  static bool     sbWas = false;
+  if (now - lastSta >= 500) { lastSta = now; sta = apOn ? WiFi.softAPgetStationNum() : 0; }
+  bool sb = apOn && sta > 0 && now >= BOOT_BLINK_MS;
+  if (sb && !sbWas) sbStart = now;
+  sbWas = sb;
+  uint32_t sDuty;
+  if (now < BOOT_BLINK_MS)  sDuty = blink(now, 250) ? B : 0;   // booting
+  else if (sb)                   sDuty = breathe(now, 3000, sbStart, B);
+  else                           sDuty = apOn ? B : 0;
+  ledcWrite(PIN_LED_SYS, 255 - sDuty);
 
   // Move LED, highest first: solid while pushing; speeding-up blink during the
   // warning before a push; slow breathing while running between pushes; off when stopped
@@ -497,15 +544,15 @@ void tickIndicators(uint32_t now) {
   if (br && !brWas) brStart = now;            // start each breathing spell at full brightness
   brWas = br;
   if (moveOn) {
-    mDuty = ledDuty();
+    mDuty = R;
   } else if (warn) {
     float f = 1.0f - (float)(int32_t)(nextKick - now) / cfg.warnMs;   // 0 -> 1 over the warning
     if (f < 0) f = 0;
     float period = 700.0f - 620.0f * f;                               // 700 ms -> 80 ms
     warnPhase += dt / period;
-    mDuty = (warnPhase - (int)warnPhase) < 0.5f ? ledDuty() : 0;
+    mDuty = (warnPhase - (int)warnPhase) < 0.5f ? R : 0;
   } else if (br) {
-    mDuty = breathe(now, 3000, brStart);
+    mDuty = breathe(now, 3000, brStart, R);
   }
   ledcWrite(PIN_LED_MOVE, mDuty);
 }
@@ -517,19 +564,19 @@ void sendJson(const String &s) {
 }
 
 String configJson() {
-  char b[900];
+  char b[1000];
   snprintf(b, sizeof b,
     "{\"spinMin\":%lu,\"spinMax\":%lu,\"dropMin\":%lu,\"dropMax\":%lu,"
     "\"hangEvery\":%lu,\"hangTime\":%lu,\"brakeRelease\":%lu,\"brakeEngage\":%lu,"
-    "\"ledPct\":%lu,\"apMinutes\":%lu,"
+    "\"ledRed\":%lu,\"ledGreen\":%lu,\"ledAmber\":%lu,\"ledBlue\":%lu,\"apMinutes\":%lu,"
     "\"useVfdOk\":%lu,\"okResume\":%lu,\"useRun\":%lu,\"useBtn\":%lu,\"softKicks\":%lu,"
     "\"hangEveryMax\":%lu,\"hangTimeMax\":%lu,\"warnMs\":%lu,\"autostart\":%lu,"
-    "\"motorMa\":%lu,\"useStr\":%lu,\"strInv\":%lu,\"strMin\":%lu,\"strMax\":%lu,\"vfdLedPct\":%lu,\"rev\":%lu}",
+    "\"motorMa\":%lu,\"useStr\":%lu,\"strInv\":%lu,\"strMin\":%lu,\"strMax\":%lu,\"rev\":%lu}",
     cfg.spinMin, cfg.spinMax, cfg.dropMin, cfg.dropMax, cfg.hangEvery, cfg.hangTime,
-    cfg.brakeRelease, cfg.brakeEngage, cfg.ledPct, cfg.apMinutes,
+    cfg.brakeRelease, cfg.brakeEngage, cfg.ledRed, cfg.ledGreen, cfg.ledAmber, cfg.ledBlue, cfg.apMinutes,
     cfg.useVfdOk, cfg.okResume, cfg.useRun, cfg.useBtn, cfg.softKicks,
     cfg.hangEveryMax, cfg.hangTimeMax, cfg.warnMs, cfg.autostart,
-    cfg.motorMa, cfg.useStr, cfg.strInv, cfg.strMin, cfg.strMax, cfg.vfdLedPct, cfgRev);
+    cfg.motorMa, cfg.useStr, cfg.strInv, cfg.strMin, cfg.strMax, cfgRev);
   return String(b);
 }
 
@@ -545,7 +592,7 @@ String statusJson() {
     "\"uptime\":%lu,\"boots\":%lu,\"kicks\":%lu,\"pauses\":%lu,\"lastSpin\":%lu,\"lastDrop\":%lu,"
     "\"nextKickIn\":%ld,\"pauseIn\":%ld,\"apOffIn\":%ld,\"clients\":%d,\"heap\":%lu,"
     "\"vfdOk\":%s,\"runSw\":%s,\"btn\":%s,\"faults\":%lu,\"ao\":%.2f,\"aoPeak\":%.2f,\"aoAvg\":%.2f,"
-    "\"dirty\":%s,\"hangTime\":%lu,\"warn\":%s,\"str\":%ld,\"lastStr\":%ld,\"rev\":%lu}",
+    "\"dirty\":%s,\"hangTime\":%lu,\"warn\":%s,\"str\":%ld,\"lastStr\":%ld,\"ledTest\":%s,\"rev\":%lu}",
     FW_VERSION, running ? "true" : "false", userRun ? "true" : "false",
     running ? "" : holdReason(), ph,
     brakeReleased ? "\"released\"" : "\"engaged\"", moveOn ? "true" : "false",
@@ -555,7 +602,8 @@ String statusJson() {
     inVfdOk.state ? "true" : "false", inRun.state ? "true" : "false", inBtn.state ? "true" : "false",
     vfdFaults, aoV, aoLastPeak, aoAvgPeak,
     configDirty() ? "true" : "false", lastPause, moveWarning(now) ? "true" : "false",
-    cfg.useStr ? (long)strNow : -1L, (long)lastStr, cfgRev);
+    cfg.useStr ? (long)strNow : -1L, (long)lastStr,
+    (ledTest && !reached(now, ledTestUntil)) ? "true" : "false", cfgRev);
   return String(b);
 }
 
@@ -569,7 +617,9 @@ Config configFromArgs() {
   rd("dropMin", c.dropMin);   rd("dropMax", c.dropMax);
   rd("hangEvery", c.hangEvery); rd("hangTime", c.hangTime);
   rd("brakeRelease", c.brakeRelease); rd("brakeEngage", c.brakeEngage);
-  rd("ledPct", c.ledPct);     rd("apMinutes", c.apMinutes);
+  rd("ledRed", c.ledRed);     rd("ledGreen", c.ledGreen);
+  rd("ledAmber", c.ledAmber); rd("ledBlue", c.ledBlue);
+  rd("apMinutes", c.apMinutes);
   rd("useVfdOk", c.useVfdOk); rd("okResume", c.okResume);
   rd("useRun", c.useRun);     rd("useBtn", c.useBtn);
   rd("softKicks", c.softKicks);
@@ -578,7 +628,6 @@ Config configFromArgs() {
   rd("autostart", c.autostart);
   rd("motorMa", c.motorMa);   rd("useStr", c.useStr);   rd("strInv", c.strInv);
   rd("strMin", c.strMin);     rd("strMax", c.strMax);
-  rd("vfdLedPct", c.vfdLedPct);
   clampConfig(c);
   return c;
 }
@@ -597,8 +646,6 @@ void applyConfig(const Config &c) {
     lastDrop = randRange(cfg.dropMin, cfg.dropMax);
     nextKick = kickStart + lastDrop;
   }
-  setBrakeReleased(brakeReleased);   // refresh LED brightness
-  setMove(moveOn);
   if (cfg.useStr != old.useStr || cfg.strInv != old.strInv ||
       cfg.strMin != old.strMin || cfg.strMax != old.strMax) {
     if (moveOn) writeStrength();     // mid-push: keep this push's value
@@ -615,6 +662,29 @@ void setupWeb() {
   server.on("/tech", HTTP_GET, [] {
     server.sendHeader("Cache-Control", "no-store");
     server.send_P(200, "text/html", INDEX_HTML);
+  });
+  server.on("/overrides", HTTP_GET, [] {           // hidden page, not linked anywhere
+    server.sendHeader("Cache-Control", "no-store");
+    server.send_P(200, "text/html", OVERRIDES_HTML);
+  });
+  server.on("/setup", HTTP_GET, [] {
+    server.sendHeader("Cache-Control", "no-store");
+    server.send_P(200, "text/html", SETUP_HTML);
+  });
+  server.on("/api/setup", HTTP_GET, [] {             // site record, stored as-is
+    String d = prefs.getString("setup", "{}");
+    sendJson(d.length() ? d : String("{}"));
+  });
+  server.on("/api/setup", HTTP_POST, [] {
+    String d = server.arg("d");
+    if (!d.startsWith("{") || d.length() > 2500) { server.send(400, "text/plain", "bad"); return; }
+    prefs.putString("setup", d);
+    sendJson(d);
+  });
+  server.on("/api/ledtest", HTTP_POST, [] {         // on=1 holds all LEDs solid for 10 s, page pings
+    ledTest = server.arg("on") == "1";
+    ledTestUntil = millis() + 10000;
+    sendJson(statusJson());
   });
   server.on("/api/status", HTTP_GET, [] { sendJson(statusJson()); });
   server.on("/api/config", HTTP_GET, [] { sendJson(configJson()); });
@@ -669,6 +739,7 @@ void setupWeb() {
       if (!Update.begin(UPDATE_SIZE_UNKNOWN)) Update.printError(Serial);
     } else if (up.status == UPLOAD_FILE_WRITE) {
       if (Update.write(up.buf, up.currentSize) != up.currentSize) Update.printError(Serial);
+      tickIndicators(millis());                      // keep the chase running during the upload
     } else if (up.status == UPLOAD_FILE_END) {
       if (Update.end(true)) Serial.printf("OTA done: %u bytes\n", up.totalSize);
       else Update.printError(Serial);
@@ -711,7 +782,7 @@ void setup() {
   ledcAttach(PIN_LED_MOVE,   5000, 8);
   ledcAttach(PIN_LED_VFD_OK, 5000, 8);
   ledcAttach(PIN_LED_SYS,    5000, 8);
-  ledcWrite(PIN_LED_SYS, 255);                     // active low: off
+  ledcWrite(PIN_LED_SYS, 0);                       // active low: on at once, boot blink follows in loop
 
   uint32_t now = millis();
   inVfdOk.begin(now); inRun.begin(now); inBtn.begin(now);
