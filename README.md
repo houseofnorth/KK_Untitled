@@ -23,6 +23,7 @@ The ESP32-C3 controls the electromagnetic actuation of the pendulum system accor
 3. [The settings page (phone)](#the-settings-page-phone) — [Main page](#main-page) · [Sliders](#sliders) · [Advanced settings](#advanced-settings)
 4. [Help](#help)
 5. Technical: [Hardware](hardware/Hardware.md) · [Firmware](firmware/Firmware.md) · [Updating the firmware](firmware/README.md)
+6. Offline documentation (PDF): [Installation and troubleshooting guide](documentation/Untitled%20-%20Installation%20and%20Troubleshooting%20Guide.pdf) · [Site Fault Check](documentation/Untitled%20-%20Site%20Fault%20Check.pdf)
 
 ---
 
@@ -144,4 +145,4 @@ Tip: change one slider at a time and watch a few pushes before you save.
 | Nothing happens after mains on | Is the green light on after a few seconds? If not, press and hold RUN / STOP for 2 s — Autostart may have been switched off for maintenance. |
 | Amber blinking fast | Drive fault — the piece waits. Switch mains off for a minute, then on. |
 | Settings page won't load | Check the blue light is blinking or on (press WIFI ENABLE if it's off), check you are on the **Untitled** Wi-Fi, turn mobile data off, type `http://192.168.4.1`. |
-| Arm moves weakly | See the *Site Fault Check* in [Specs](Specs/). |
+| Arm moves weakly | Work through the [Site Fault Check](documentation/Untitled%20-%20Site%20Fault%20Check.pdf). |
