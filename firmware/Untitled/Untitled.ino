@@ -1,7 +1,7 @@
 /*
 ------------------------------------------------------------
 UNTITLED – Controller firmware (XIAO ESP32C3)
-Version 1.7.1  (2026-10-18)  – keep in step with FW_VERSION below
+Version 1.7.8  (2026-10-18)  – keep in step with FW_VERSION below
 
 Artist:          Kitty Kraus
 Original code:   Roman Zulek (Arduino), 2011
@@ -16,27 +16,28 @@ Behaviour (same as original):
 
 Added: Wi-Fi AP + mobile web page (tune, save, start/stop, test kick,
 stats, OTA upload). Artist page at /, technician page at /tech,
-overrides page /overrides: per-LED levels, LED test, VersiDrive check, V2 options;
-setup page /setup: record of motor nameplate + drive parameters (P-08 = motorMa).
-Main page nav: Main · Advanced. /tech, /overrides, /setup nav: all four.
+overrides page /overrides: per-LED levels, LED test, VersiDrive check;
+VersiDrive page /versidrive: documents the drive + motor nameplate, live readouts (P-08 = motorMa).
+Main page nav: Main · Advanced. /tech, /overrides, /versidrive nav: all four.
 Live changes apply at once; Save stores them, Undo returns to the saved state.
-AP turns off apMinutes after it starts (0 = always on),
-but not while a phone is connected.
+Wi-Fi is OFF at power-up; WIFI ENABLE switches it on (1.7.5).
+AP turns off after apMinutes without use (0 = stays on): opening a page or
+any action (Save, Start, slider move, ...) restarts the timer; status polling does not.
 
 V2 options – on /overrides, saved in flash (useVfdOk and autostart ON by default, rest OFF):
   useVfdOk   VFD "drive OK" relay (VFD_OK_IN). Not OK -> move off, brake engaged.
              Resumes once OK has been stable for okResume ms. Also holds the
              piece after power-up until the drive reports ready.
   autostart  ON by default (1.6.0): mains on starts the piece (warning blink, then first push).
-             Untick on /overrides for installation / maintenance: the piece then stays stopped
+             Set to 0 on /tech (Settings) for installation / maintenance: the piece then stays stopped
              after power-up until RUN is held 2 s or Start is pressed.
-  softKicks  First N kicks after every start ramp from 50 % to 100 % length (0 = off).
+  softKicks  First N kicks after every start ramp from 50 % to 100 % length (0 = off). Not in the UI, stays 0.
 
 Panel buttons (1.4.0, always active, momentary to GND):
   RUN (RUN_IN)   stopped: hold 2 s = start (warning blink, then first push; may let go).
                  Short press does nothing. Starting/running: any press = stop + brake at once.
-  Wi-Fi (BTN_IN) press = Wi-Fi AP on, or restart its timer if already on. Times out
-                 after apMinutes. NOTE: GPIO2 is a strapping pin – holding this
+  Wi-Fi (BTN_IN) press = Wi-Fi AP on (blue blinks, then solid), or restart its timer if
+                 already on. Only ever switches on; off is the idle timeout after apMinutes. NOTE: GPIO2 is a strapping pin – holding this
                  button during power-up stops the board from booting.
   Web Start/Stop behave the same as the RUN button.
 
@@ -54,8 +55,8 @@ Always active (indication only, cannot stop the piece):
               2 Hz blink = not OK while the piece should run
   LED levels  each LED has its own level, ledRed / ledGreen / ledAmber / ledBlue (1.7.0, /overrides)
   LED_MOVE    solid = push, speeding-up blink = warning, slow breathing = running, off = stopped
-  LED_SYS     Wi-Fi: blink while booting, on = Wi-Fi up, breathing = a phone is connected,
-              off = Wi-Fi off
+  LED_SYS     Wi-Fi: 4 Hz blink while booting or starting (after WIFI ENABLE), 2 Hz blink = Wi-Fi up,
+              solid = a device is connected, off = Wi-Fi off (15 min idle)
   OTA update  all four LEDs chase left to right (red, green, amber, blue)
   VFD AO      live VersiDrive analog output + peak per kick on the web page
 
@@ -72,9 +73,9 @@ Board: XIAO_ESP32C3 (esp32 core 3.x).
 #include "page.h"     // technician page  /tech
 #include "artist.h"   // artist page      /
 #include "overrides.h" // overrides page /overrides
-#include "setup.h"    // setup record   /setup
+#include "versidrive.h" // VersiDrive record /versidrive
 
-#define FW_VERSION "1.7.1"
+#define FW_VERSION "1.7.8"
 
 // --- Pins (named after the schematic nets) ---
 constexpr uint8_t PIN_K1_GATE    = D10; // GPIO10 net K1_GATE   -> Q1 -> K1 : brake coil  (HIGH = brake released)
@@ -96,6 +97,8 @@ constexpr float    AO_SCALE      = 7.8f;  // V at VFD terminal 8 = V at pin * 7.
 constexpr uint32_t AO_TAIL_MS    = 1500;  // keep tracking the peak this long after a kick ends
 constexpr uint32_t RUN_HOLD_MS   = 2000;  // hold RUN this long to start
 constexpr uint32_t BOOT_BLINK_MS = 2000;  // blue LED blinks this long after power-up
+constexpr uint32_t WIFI_BLINK_MS = 1500;  // ... and after WIFI ENABLE, until Wi-Fi is up
+uint32_t blueBlinkUntil = BOOT_BLINK_MS;
 
 // --- Wi-Fi ---
 const char *AP_SSID  = "Untitled";
@@ -409,6 +412,7 @@ const char *holdReason() {
 }
 
 void startAP();
+void stopAP();
 
 void tickInputs(uint32_t now) {
   // VFD drive OK
@@ -441,10 +445,12 @@ void tickInputs(uint32_t now) {
     Serial.println("RUN button: start");
   }
 
-  // Wi-Fi button: AP on, or restart its timer
-  if (inBtn.update(now) && inBtn.state) {
+  // Wi-Fi button: only ever switches Wi-Fi on (or restarts its 15 min if already on);
+  // the blue LED blinks while it starts, then goes solid
+  if (inBtn.update(now) && inBtn.state && !otaActive) {
     if (!apOn) startAP();
-    apSince = now;
+    apSince = millis();
+    blueBlinkUntil = millis() + WIFI_BLINK_MS;
     Serial.println("Wi-Fi button: AP on, timer restarted");
   }
 
@@ -488,7 +494,7 @@ void tickIndicators(uint32_t now) {
   const uint32_t R = duty(cfg.ledRed), G = duty(cfg.ledGreen), A = duty(cfg.ledAmber), B = duty(cfg.ledBlue);
   if (ledTest && !reached(now, ledTestUntil)) {   // /overrides LED test: all solid at their levels
     ledcWrite(PIN_LED_MOVE, R); ledcWrite(PIN_LED_BRAKE, G);
-    ledcWrite(PIN_LED_VFD_OK, A); ledcWrite(PIN_LED_SYS, 255 - B);
+    ledcWrite(PIN_LED_VFD_OK, A); ledcWrite(PIN_LED_SYS, 256 - B);
     return;
   }
   ledTest = false;
@@ -498,7 +504,7 @@ void tickIndicators(uint32_t now) {
     uint8_t step = (now / 120) % 4;
     for (uint8_t i = 0; i < 4; i++) {
       uint32_t d = i == step ? lvl[i] : (i == (step + 3) % 4 ? lvl[i] / 5 : 0);   // lit + short tail
-      ledcWrite(pins[i], pins[i] == PIN_LED_SYS ? 255 - d : d);
+      ledcWrite(pins[i], pins[i] == PIN_LED_SYS ? 256 - d : d);
     }
     return;
   }
@@ -515,20 +521,18 @@ void tickIndicators(uint32_t now) {
   else if (userRun)   vDuty = blink(now, 500) ? A : 0;
   else                vDuty = breathe(now, 3000, vbStart, A);
   ledcWrite(PIN_LED_VFD_OK, vDuty);
-  // System LED (active low) = Wi-Fi: blink while booting, on = AP up, breathing = phone
-  // connected, off = Wi-Fi off (OTA: chase, handled above)
-  static uint32_t lastSta = 0, sbStart = 0;
+  // System LED (active low) = Wi-Fi: fast blink while booting / starting, 2 Hz blink = Wi-Fi up
+  // (same tempo as the amber fault blink), solid = a device is connected, off = Wi-Fi off
+  // (OTA: chase, handled above)
+  static uint32_t lastSta = 0;
   static uint8_t  sta = 0;
-  static bool     sbWas = false;
   if (now - lastSta >= 500) { lastSta = now; sta = apOn ? WiFi.softAPgetStationNum() : 0; }
-  bool sb = apOn && sta > 0 && now >= BOOT_BLINK_MS;
-  if (sb && !sbWas) sbStart = now;
-  sbWas = sb;
   uint32_t sDuty;
-  if (now < BOOT_BLINK_MS)  sDuty = blink(now, 250) ? B : 0;   // booting
-  else if (sb)                   sDuty = breathe(now, 3000, sbStart, B);
-  else                           sDuty = apOn ? B : 0;
-  ledcWrite(PIN_LED_SYS, 255 - sDuty);
+  if (!reached(now, blueBlinkUntil)) sDuty = blink(now, 250) ? B : 0;   // booting / Wi-Fi starting
+  else if (!apOn)                    sDuty = 0;                          // Wi-Fi off
+  else if (sta > 0)                  sDuty = B;                          // device connected: solid
+  else                               sDuty = blink(now, 500) ? B : 0;   // Wi-Fi up, waiting: 2 Hz
+  ledcWrite(PIN_LED_SYS, 256 - sDuty);              // active low: 256 = pin held high = fully off
 
   // Move LED, highest first: solid while pushing; speeding-up blink during the
   // warning before a push; slow breathing while running between pushes; off when stopped
@@ -655,81 +659,82 @@ void applyConfig(const Config &c) {
 }
 
 void setupWeb() {
-  server.on("/", HTTP_GET, [] {
+  server.on("/", HTTP_GET, [] { apSince = millis();
     server.sendHeader("Cache-Control", "no-store");
     server.send_P(200, "text/html", ARTIST_HTML);
   });
-  server.on("/tech", HTTP_GET, [] {
+  server.on("/tech", HTTP_GET, [] { apSince = millis();
     server.sendHeader("Cache-Control", "no-store");
     server.send_P(200, "text/html", INDEX_HTML);
   });
-  server.on("/overrides", HTTP_GET, [] {           // hidden page, not linked anywhere
+  server.on("/overrides", HTTP_GET, [] { apSince = millis();   // linked from /tech and /versidrive only
     server.sendHeader("Cache-Control", "no-store");
     server.send_P(200, "text/html", OVERRIDES_HTML);
   });
-  server.on("/setup", HTTP_GET, [] {
+  server.on("/versidrive", HTTP_GET, [] { apSince = millis();
     server.sendHeader("Cache-Control", "no-store");
-    server.send_P(200, "text/html", SETUP_HTML);
+    server.send_P(200, "text/html", VERSIDRIVE_HTML);
   });
+  server.on("/setup", HTTP_GET, [] { server.sendHeader("Location", "/versidrive"); server.send(302); });
   server.on("/api/setup", HTTP_GET, [] {             // site record, stored as-is
     String d = prefs.getString("setup", "{}");
     sendJson(d.length() ? d : String("{}"));
   });
-  server.on("/api/setup", HTTP_POST, [] {
+  server.on("/api/setup", HTTP_POST, [] { apSince = millis();   // activity keeps Wi-Fi on
     String d = server.arg("d");
     if (!d.startsWith("{") || d.length() > 2500) { server.send(400, "text/plain", "bad"); return; }
     prefs.putString("setup", d);
     sendJson(d);
   });
-  server.on("/api/ledtest", HTTP_POST, [] {         // on=1 holds all LEDs solid for 10 s, page pings
+  server.on("/api/ledtest", HTTP_POST, [] { apSince = millis();         // on=1 holds all LEDs solid for 10 s, page pings
     ledTest = server.arg("on") == "1";
     ledTestUntil = millis() + 10000;
     sendJson(statusJson());
   });
   server.on("/api/status", HTTP_GET, [] { sendJson(statusJson()); });
   server.on("/api/config", HTTP_GET, [] { sendJson(configJson()); });
-  server.on("/api/config", HTTP_POST, [] {           // apply + save
+  server.on("/api/config", HTTP_POST, [] { apSince = millis();           // apply + save
     applyConfig(configFromArgs()); saveConfig();
     Serial.println("Config saved");
     sendJson(configJson());
   });
-  server.on("/api/live", HTTP_POST, [] {             // apply, not saved
+  server.on("/api/live", HTTP_POST, [] { apSince = millis();             // apply, not saved
     applyConfig(configFromArgs());
     sendJson(configJson());
   });
-  server.on("/api/revert", HTTP_POST, [] {           // back to the saved config
+  server.on("/api/revert", HTTP_POST, [] { apSince = millis();           // back to the saved config
     applyConfig(savedCfg);
     sendJson(configJson());
   });
-  server.on("/api/defaults", HTTP_POST, [] {
+  server.on("/api/defaults", HTTP_POST, [] { apSince = millis();   // activity keeps Wi-Fi on
     applyConfig(DEFAULTS); saveConfig();
     sendJson(configJson());
   });
-  server.on("/api/start", HTTP_POST, [] { userRun = true;  tickInputs(millis()); sendJson(statusJson()); });
-  server.on("/api/stop",  HTTP_POST, [] { userRun = false; tickInputs(millis()); sendJson(statusJson()); });
-  server.on("/api/kick",  HTTP_POST, [] {            // push after the warning
+  server.on("/api/start", HTTP_POST, [] { apSince = millis(); userRun = true;  tickInputs(millis()); sendJson(statusJson()); });
+  server.on("/api/stop",  HTTP_POST, [] { apSince = millis(); userRun = false; tickInputs(millis()); sendJson(statusJson()); });
+  server.on("/api/kick",  HTTP_POST, [] { apSince = millis();            // push after the warning
     uint32_t now = millis(), due = now + cfg.warnMs;
     if (running && phase == WAITING && (int32_t)(nextKick - due) > 0) {
       nextKick = due; lastDrop = nextKick - kickStart; inPause = false;
     }
     sendJson(statusJson());
   });
-  server.on("/api/wifi", HTTP_POST, [] {             // restart the Wi-Fi off timer
+  server.on("/api/wifi", HTTP_POST, [] { apSince = millis();             // restart the Wi-Fi off timer
     apSince = millis();
     sendJson(statusJson());
   });
-  server.on("/api/reboot", HTTP_POST, [] {
+  server.on("/api/reboot", HTTP_POST, [] { apSince = millis();   // activity keeps Wi-Fi on
     server.send(200, "text/plain", "rebooting");
     safeOutputs(); delay(300); ESP.restart();
   });
 
   // OTA: upload Untitled.ino.bin
-  server.on("/update", HTTP_POST, [] {
+  server.on("/update", HTTP_POST, [] { apSince = millis();   // activity keeps Wi-Fi on
     bool ok = !Update.hasError();
     server.sendHeader("Connection", "close");
     server.send(ok ? 200 : 500, "text/plain", ok ? "OK" : Update.errorString());
     otaActive = false;
-    if (ok) { delay(500); ESP.restart(); }
+    if (ok) { prefs.putBool("wifiNext", true); delay(500); ESP.restart(); }   // Wi-Fi back on after the update
   }, [] {
     HTTPUpload &up = server.upload();
     if (up.status == UPLOAD_FILE_START) {
@@ -799,7 +804,12 @@ void setup() {
                 FW_VERSION, bootCount, cfg.useVfdOk ? "on" : "off",
                 cfg.autostart ? "on" : "off", cfg.softKicks);
 
-  startAP();
+  if (prefs.getBool("wifiNext", false)) {        // right after a firmware update: Wi-Fi on, to check the new version
+    prefs.putBool("wifiNext", false);
+    startAP();
+  } else {
+    WiFi.mode(WIFI_OFF);                           // otherwise Wi-Fi stays off until WIFI ENABLE is pressed
+  }
   userRun = cfg.autostart;                         // mains on = start (untick Autostart for maintenance)
   faultActive = cfg.useVfdOk && !inVfdOk.state;    // wait for drive ready
   tickInputs(millis());
@@ -817,9 +827,10 @@ void loop() {
   if (apOn) {
     server.handleClient();
     static uint32_t lastApCheck = 0;
-    if (cfg.apMinutes && now - lastApCheck > 1000) {
-      lastApCheck = now;
-      if (now - apSince > cfg.apMinutes * 60000UL && WiFi.softAPgetStationNum() == 0 && !otaActive) stopAP();
+    uint32_t t = millis();             // fresh: apSince may have been set after 'now' (button, web request)
+    if (cfg.apMinutes && t - lastApCheck > 1000) {
+      lastApCheck = t;
+      if ((int32_t)(t - apSince) > (int32_t)(cfg.apMinutes * 60000UL) && !otaActive) stopAP();   // idle timeout
     }
   }
   delay(1);

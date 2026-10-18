@@ -1,6 +1,6 @@
 #pragma once
-// Hidden page served at http://192.168.4.1/overrides (linked only from /tech and /setup)
-// Per-LED levels, LED test, VersiDrive check, V2 options.
+// Hidden page served at http://192.168.4.1/overrides (linked only from /tech and /versidrive)
+// Per-LED levels, LED test, VersiDrive check.
 
 const char OVERRIDES_HTML[] PROGMEM = R"HTML(<!doctype html>
 <html lang="en"><head>
@@ -28,7 +28,7 @@ button.pri{background:#b04cff}button:active{opacity:.6}
 #msg{position:fixed;left:16px;right:16px;bottom:16px;background:#333;padding:12px;text-align:center;display:none}
 </style></head><body>
 <h1>OVERRIDES</h1>
-<nav class="nav"><a href="/">Main</a><a href="/tech">Advanced</a><a class="on" href="/overrides">Overrides</a><a href="/setup">Setup</a></nav>
+<nav class="nav"><a href="/">Main</a><a href="/tech">Advanced</a><a class="on" href="/overrides">Overrides</a><a href="/versidrive">VersiDrive</a></nav>
 <div class="sub">Untitled &middot; <span id="fw"></span> &middot; changes work at once, Save keeps them</div>
 
 <div class="card"><h2>LED levels</h2>
@@ -36,7 +36,6 @@ button.pri{background:#b04cff}button:active{opacity:.6}
  <label><div>LED test <small>all four solid at these levels &middot; ends when you leave the page</small></div><input type="checkbox" id="test"></label>
 </div>
 <div class="card"><h2>VersiDrive</h2><div id="vfd"></div></div>
-<div class="card"><h2>V2 options</h2><div id="opts"></div></div>
 
 <div class="btns"><button class="pri" onclick="save()">Save</button><button onclick="undo()">Undo</button></div>
 <div id="msg"></div>
@@ -47,17 +46,14 @@ const L=[['ledRed','Red · RUN / STOP','#e5342b'],['ledGreen','Green · BRAKE RE
 const V=[
  ['useVfdOk','Stop on VFD fault','on',1,'untick to run without the drive · tick again before going live'],
  ['okResume','Resume after drive OK for','s',1000,''],
- ['motorMa','Motor rated current (P-08)','A',1000,'same value as P-08 on Setup · for the A readout, needs P-25 = 9']];
-const O=[
- ['autostart','Autostart after power-up','on',1,'mains on starts the piece · untick for installation / maintenance'],
- ['softKicks','Soft start kicks','kicks',1,'first pushes ramp 50→100 %, 0 = off']];
-const F=V.concat(O);
+ ['motorMa','Motor rated current (P-08)','A',1000,'same value as P-08 on the VersiDrive page · for the A readout, needs P-25 = 9']];
+const F=V;
 const $=id=>document.getElementById(id);
 function msg(t){const m=$('msg');m.textContent=t;m.style.display='block';clearTimeout(m.t);m.t=setTimeout(()=>m.style.display='none',2000)}
 const fld=([k,l,u,sc,h])=>u=='on'
  ?`<label><div>${l}${h?' <small>'+h+'</small>':''}</div><input type="checkbox" id="${k}"></label>`
  :`<label><div>${l} <small>${u}${h?' · '+h:''}</small></div><input type="number" inputmode="decimal" step="any" min="0" id="${k}"></label>`;
-$('vfd').innerHTML=V.map(fld).join('');$('opts').innerHTML=O.map(fld).join('');
+$('vfd').innerHTML=V.map(fld).join('');
 $('leds').innerHTML=L.map(([k,n,c])=>`<div class="led"><i style="background:${c}"></i><div><small style="color:#888">${n}</small><br><input type="range" min="0" max="100" id="${k}_r"></div><input type="number" inputmode="numeric" min="0" max="100" id="${k}"></div>`).join('');
 let rev=-1,busy=0;
 function fill(c){rev=c.rev;L.forEach(([k])=>{$(k).value=c[k];$(k+'_r').value=c[k]});

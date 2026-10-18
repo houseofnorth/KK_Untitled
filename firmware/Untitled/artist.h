@@ -95,7 +95,7 @@ en:{pushing:'Pushing',warn:'About to push',resting:'Resting',pause:'Long pause',
  every:'Long pause every',everyD:'Now and then the piece rests for longer. Switch off for no long pauses.',never:'Never',
  plen:'Long pause length',plenD:'How long a long pause lasts, random between min and max.',
  unsaved:'Changes are live, but not saved yet',undo:'Undo',save:'Save',saved:'Saved · kept after power-off',undone:'Back to saved settings',
- wifiOff:'Wi-Fi turns off in ',wifiConn:'Wi-Fi turns off when you disconnect',wifiAlways:'Wi-Fi always on',wifiStay:'Reset to 15 min',wifiReset:'Wi-Fi timer reset',
+ wifiOff:'Wi-Fi turns off in ',wifiConn:'Wi-Fi turning off',wifiAlways:'Wi-Fi always on',wifiStay:'Reset to 15 min',wifiReset:'Wi-Fi timer reset',
  tech:'Advanced settings',main:'Main',adv:'Advanced'},
 de:{pushing:'Schub',warn:'Gleich geht’s los',resting:'Ruhe',pause:'Lange Pause',starting:'Startet',stopping:'Stoppt',stopped:'Gestoppt',
  waitVfd:'Wartet · Störung Antrieb',offline:'Keine Verbindung',
@@ -107,7 +107,7 @@ de:{pushing:'Schub',warn:'Gleich geht’s los',resting:'Ruhe',pause:'Lange Pause
  every:'Lange Pause alle',everyD:'Ab und zu ruht die Arbeit länger. Ausschalten für keine langen Pausen.',never:'Nie',
  plen:'Länge der langen Pause',plenD:'Wie lange eine lange Pause dauert, zufällig zwischen Min und Max.',
  unsaved:'Änderungen sind aktiv, aber noch nicht gespeichert',undo:'Rückgängig',save:'Speichern',saved:'Gespeichert · bleibt nach dem Ausschalten',undone:'Zurück zu den gespeicherten Werten',
- wifiOff:'WLAN aus in ',wifiConn:'WLAN geht aus, wenn du die Verbindung trennst',wifiAlways:'WLAN immer an',wifiStay:'Auf 15 Min. zurücksetzen',wifiReset:'WLAN-Timer zurückgesetzt',
+ wifiOff:'WLAN aus in ',wifiConn:'WLAN geht aus',wifiAlways:'WLAN immer an',wifiStay:'Auf 15 Min. zurücksetzen',wifiReset:'WLAN-Timer zurückgesetzt',
  tech:'Erweiterte Einstellungen',main:'Start',adv:'Erweitert'}};
 // id, config keys, low, high (ms, log scale), can be off, pct = linear 0..100 %, sh = soft/hard ends
 const S=[

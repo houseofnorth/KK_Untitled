@@ -13,7 +13,7 @@ The current firmware is **[`Untitled.ino.bin`](Untitled.ino.bin)** in this folde
 
 ## 2. Connect to the controller
 
-1. If the blue light is off, press **WIFI ENABLE** — it comes on. If it's already on, Wi-Fi is up and you can go straight to step 2.
+1. If the blue light is off, press **WIFI ENABLE**. It blinks fast while Wi-Fi starts, then blinks twice a second: Wi-Fi is up. Once your phone is connected it stays on. If it's already blinking or on, go straight to step 2.
 2. Join the Wi-Fi **Untitled** (password **deltitnu**).
 3. Open **http://192.168.4.1/tech** in the browser. Turn mobile data off if the page doesn't load.
 
@@ -22,7 +22,7 @@ The current firmware is **[`Untitled.ino.bin`](Untitled.ino.bin)** in this folde
 1. Scroll to **Firmware update** at the bottom.
 2. Tap **Choose file** and pick `Untitled.ino.bin`.
 3. Tap **Upload**. The bar fills; the four panel lights chase left to right while it installs. **Don't switch the mains off.**
-4. After "Updated – rebooting" the controller restarts (about 10 s). The blue light blinks, then comes on again.
+4. After "Updated – rebooting" the controller restarts (about 10 s). The blue light blinks fast, then twice a second — after an update Wi-Fi comes back on by itself (normally it stays off after power-up until WIFI ENABLE is pressed).
 
 ## 4. Check
 

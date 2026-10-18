@@ -34,7 +34,7 @@ a{color:inherit}
 #msg{position:fixed;left:16px;right:16px;bottom:16px;background:#333;padding:12px;border-radius:10px;text-align:center;display:none}
 </style></head><body>
 <h1>KITTY KRAUS — UNTITLED</h1>
-<nav class="nav"><a href="/">Main</a><a class="on" href="/tech">Advanced</a><a href="/overrides">Overrides</a><a href="/setup">Setup</a></nav>
+<nav class="nav"><a href="/">Main</a><a class="on" href="/tech">Advanced</a><a href="/overrides">Overrides</a><a href="/versidrive">VersiDrive</a></nav>
 <div class="sub">Advanced settings &middot; <span id="fw"></span></div>
 
 <div class="card">
@@ -88,7 +88,7 @@ a{color:inherit}
  <progress id="pr" value="0" max="100"></progress>
  <div class="btns" style="margin-top:10px"><button onclick="ota()">Upload</button><button onclick="reboot()">Reboot</button></div>
 </div>
-<div class="foot"><a href="/overrides">Overrides</a><a href="/setup">Setup</a></div>
+<div class="foot"><a href="/overrides">Overrides</a><a href="/versidrive">VersiDrive</a></div>
 <div id="msg"></div>
 
 <script>
@@ -99,7 +99,8 @@ const F=[
  ['hangTime','Pause length min','s',1000,'rest after a pause starts'],['hangTimeMax','Pause length max','s',1000,''],
  ['warnMs','Move warning','s',1000,'LED blinks faster before each kick, 0 = off'],
  ['brakeRelease','Brake release wait','ms',1,'before first kick'],['brakeEngage','Brake engage wait','ms',1,'after stop'],
- ['apMinutes','Wi-Fi on after boot','min',1,'0 = always on']];
+ ['apMinutes','Wi-Fi turns off after','min',1,'without use · 0 = stays on until power-off'],
+ ['autostart','Autostart after power-up','1 = on, 0 = off',1,'0 for installation / maintenance, 1 before leaving']];
 const X=[
  ['useStr','Strength output','on',1,'GPIO9 → GP8101S (0–10 V) → VFD AI1 (T6)'],
  ['strInv','Strength output inverted','on',1,'off for GP8101S; on only for opto modules (DIN− → GPIO9)'],
@@ -131,7 +132,7 @@ function show(s){
  $('nk').textContent=fmt(s.nextKickIn);$('np').textContent=fmt(s.pauseIn);
  $('lk').textContent=s.kicks?s.lastSpin+' ms / '+fmt(s.lastDrop):'–';
  $('up').textContent=fmt(s.uptime*1000);$('kc').textContent=s.kicks+' / '+s.pauses;$('bt').textContent=s.boots;
- $('ap').textContent=s.apOffIn<0?'never':(s.apOffIn==0?'when phone disconnects':fmt(s.apOffIn));$('apb').style.display=s.apOffIn<0?'none':'';
+ $('ap').textContent=s.apOffIn<0?'never':(s.apOffIn==0?'now':fmt(s.apOffIn));$('apb').style.display=s.apOffIn<0?'none':'';
  $('hp').textContent=Math.round(s.heap/1024)+' kB';
  $('hold').textContent=s.hold&&s.hold!='stopped'?'Held: '+s.hold:'';
  $('iv').textContent=s.vfdOk?'OK':'not OK';$('ir').textContent=s.runSw?'pressed':'–';$('ib').textContent=s.btn?'pressed':'–';

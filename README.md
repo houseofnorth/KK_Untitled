@@ -61,7 +61,7 @@ Top row: four status lights. Bottom row: two buttons and two cable sockets. Each
 | RUN / STOP | Red button | Press once to stop · hold 2 s to start |
 | BRAKE RELEASE | Silver socket | The cable to the motor brake |
 | VERSI DRIVE | Black socket | The cable to the motor drive |
-| WIFI ENABLE | Blue button | Wi-Fi on for 15 minutes, for the settings page on your phone |
+| WIFI ENABLE | Blue button | Wi-Fi on for 15 minutes, for the settings page on your phone. The blue light blinks fast while it starts, then twice a second until a phone connects |
 
 **Red — the piece**
 
@@ -95,18 +95,18 @@ If amber keeps blinking, switch the mains off for a minute and on again.
 
 | Blue light | Meaning |
 |---|---|
-| Blinking (first 2 s after mains on) | Starting up |
-| On | Wi-Fi is on — you can open the settings page |
-| Slow breathing | A phone is connected |
+| Fast blinking (after mains on, or after pressing WIFI ENABLE) | Starting up. After mains on it then goes off — Wi-Fi stays off until you press WIFI ENABLE |
+| Blinking (twice a second) | Wi-Fi is on — join it and open the settings page |
+| On | A phone is connected |
 | Off | Wi-Fi is off. Press **WIFI ENABLE** to switch it on |
 
 ## The settings page (phone)
 
-1. If the blue light is off, press **WIFI ENABLE** — it comes on. If it's already on, Wi-Fi is up and you can go straight to step 2.
+1. If the blue light is off, press **WIFI ENABLE**. It blinks fast while Wi-Fi starts, then blinks twice a second: Wi-Fi is up. Once your phone is connected it stays on. If it's already blinking or on, go straight to step 2.
 2. On your phone, join the Wi-Fi **Untitled** (password: **deltitnu**).
 3. Open **http://192.168.4.1** in the browser. Turn mobile data off if the page doesn't load.
 
-The Wi-Fi switches itself off after 15 minutes, but not while a phone is connected. **Reset to 15 min** at the bottom of the page restarts the timer.
+The Wi-Fi switches itself off after 15 minutes without use — opening a page or changing anything counts as use, just having the page open does not. **Reset to 15 min** at the bottom of the page restarts the timer.
 
 ### Main page
 
@@ -143,5 +143,5 @@ Tip: change one slider at a time and watch a few pushes before you save.
 |---|---|
 | Nothing happens after mains on | Is the green light on after a few seconds? If not, press and hold RUN / STOP for 2 s — Autostart may have been switched off for maintenance. |
 | Amber blinking fast | Drive fault — the piece waits. Switch mains off for a minute, then on. |
-| Settings page won't load | Press WIFI ENABLE again, check you are on the **Untitled** Wi-Fi, turn mobile data off, type `http://192.168.4.1`. |
+| Settings page won't load | Check the blue light is blinking or on (press WIFI ENABLE if it's off), check you are on the **Untitled** Wi-Fi, turn mobile data off, type `http://192.168.4.1`. |
 | Arm moves weakly | See the *Site Fault Check* in [Specs](Specs/). |

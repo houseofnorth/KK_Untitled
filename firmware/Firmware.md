@@ -1,6 +1,6 @@
 # Firmware — `firmware/Untitled/`
 
-Installation firmware for the V2 controller (Seeed XIAO ESP32C3). Port of Roman Zulek's original Arduino logic (push / rest / long pause) plus panel buttons and lights, a Wi-Fi settings page and over-the-air updates. Current version: see `FW_VERSION` at the top of [`Untitled.ino`](Untitled/Untitled.ino) (1.7.1).
+Installation firmware for the V2 controller (Seeed XIAO ESP32C3). Port of Roman Zulek's original Arduino logic (push / rest / long pause) plus panel buttons and lights, a Wi-Fi settings page and over-the-air updates. Current version: see `FW_VERSION` at the top of [`Untitled.ino`](Untitled/Untitled.ino) (1.7.8).
 
 How to use the piece: [README](../README.md) · Board, wiring, drive settings: [Hardware.md](../hardware/Hardware.md)
 
@@ -11,8 +11,8 @@ How to use the piece: [README](../README.md) · Board, wiring, drive settings: [
 | `Untitled.ino` | Logic, inputs, LEDs, settings storage, web API, OTA |
 | `artist.h` | Main page `/` — status, Start/Stop, sliders, EN/DE |
 | `page.h` | Technician page `/tech` — status lights, stats, inputs, settings, firmware upload |
-| `overrides.h` | Overrides page `/overrides` — LED levels, LED test, VersiDrive (VFD check, motor current), V2 options (Autostart, soft start) |
-| `setup.h` | Setup page `/setup` — record of the motor nameplate and VersiDrive parameters |
+| `overrides.h` | Overrides page `/overrides` — LED levels, LED test, VersiDrive (VFD check, motor current) |
+| `versidrive.h` | VersiDrive page `/versidrive` — documents the drive and motor, with live readouts (`/setup` redirects here) |
 
 ## Build and flash
 
@@ -42,7 +42,7 @@ arduino-cli compile --fqbn esp32:esp32:XIAO_ESP32C3 --output-dir build/Untitled 
 | Button | Input | Action |
 |---|---|---|
 | RUN / STOP | RUN_IN, GPIO4 | Stopped: hold 2 s = start (may let go once red blinks); short press ignored. Starting or running: any press = stop + brake. Web Start/Stop act the same. |
-| WIFI ENABLE | BTN_IN, GPIO2 | AP on, or restart its timer. GPIO2 is a strapping pin: holding it during power-up stops the board from booting. |
+| WIFI ENABLE | BTN_IN, GPIO2 | AP on (blue blinks 1.5 s, then solid), or restart its timer if already on. Only switches on; ignored during an upload. GPIO2 is a strapping pin: holding it during power-up stops the board from booting. |
 
 ### Lights (priority top to bottom)
 
@@ -51,7 +51,7 @@ arduino-cli compile --fqbn esp32:esp32:XIAO_ESP32C3 --output-dir build/Untitled 
 | Red MOVE | D6 | solid = pushing · speeding-up blink = warning before a push · breathing (3 s) = running, resting · off = stopped |
 | Green BRAKE | D5 | on = brake released |
 | Amber VFD_OK | D3 | on = drive OK · breathing = drive not OK, stopped · 2 Hz = drive not OK while it should run |
-| Blue SYS | D8 (active low) | 4 Hz blink = booting (first 2 s) · on = AP up · breathing = phone connected · off = Wi-Fi off |
+| Blue SYS | D8 (active low) | 4 Hz blink = booting (first 2 s) or Wi-Fi starting after WIFI ENABLE (1.5 s) · 2 Hz blink = AP up · on = phone connected · off = Wi-Fi off |
 | All four | | chase red → green → amber → blue (120 ms a step) = OTA upload in progress |
 
 Each LED has its own level, set on `/overrides` (defaults red 50 %, green 50 %, amber 30 %, blue 50 %). Breathing runs from 10 % to 100 % of that level and always starts at full, so it joins smoothly onto a push or blink.
@@ -59,10 +59,10 @@ Each LED has its own level, set on `/overrides` (defaults red 50 %, green 50 %, 
 ## Wi-Fi and pages
 
 - Access point **`Untitled`**, password in `AP_PASS` (`Untitled.ino`). Page at `http://192.168.4.1` or `http://untitled.local`.
-- AP on at power-up, off after *Wi-Fi on after boot* (15 min, 0 = always on), never while a phone is connected. WIFI ENABLE or *Reset 15 min* restarts it.
+- **AP off at power-up** — WIFI ENABLE switches it on. Exception: right after a successful OTA update the AP starts by itself (NVS flag `wifiNext`), so the new version can be checked. Off again after *Wi-Fi turns off after* (15 min, 0 = stays on) **without use**, connected phones or not: opening a page or any POST (Save, live slider changes, Start/Stop, LED test …) restarts the timer; status/config polling does not. *Reset 15 min* or WIFI ENABLE restarts the timer.
 - Main page `/`: live changes apply at once, **Save** stores them in flash, **Undo** returns to the saved state.
 - `/tech`: settings apply on **Save**; *Defaults* restores factory values (including the `/overrides` ones).
-- Nav bar: the main page shows *Main · Advanced*; `/tech`, `/overrides` and `/setup` show all four. The main page footer links to House of North (needs normal internet).
+- Nav bar: the main page shows *Main · Advanced*; `/tech`, `/overrides` and `/versidrive` show all four. The main page footer links to House of North (needs normal internet).
 - `/overrides`: linked only from the technician pages. Changes apply at once, **Save** keeps them, **Undo** returns to the saved state. *LED test* holds all four LEDs solid at their levels; it ends 10 s after the page stops pinging (untick, or leave the page).
 
 ### Settings and defaults
@@ -77,7 +77,8 @@ Each LED has its own level, set on `/overrides` (defaults red 50 %, green 50 %, 
 | Pause length min / max | 60 / 60 s |
 | Move warning | 3 s |
 | Brake release wait / engage wait | 1250 / 1250 ms |
-| Wi-Fi on after boot | 15 min |
+| Wi-Fi turns off after | 15 min without use |
+| Autostart after power-up | 1 (on) — set 0 for installation / maintenance |
 
 `/overrides`:
 
@@ -86,11 +87,9 @@ Each LED has its own level, set on `/overrides` (defaults red 50 %, green 50 %, 
 | Red / green / amber / blue LED level | 50 / 50 / 30 / 50 % |
 | Stop on VFD fault | on — untick to test without the drive, tick again before going live |
 | Resume after drive OK for | 5 s |
-| Autostart after power-up | on — untick for installation / maintenance |
-| Soft start kicks | 0 (off) — first N pushes ramp 50 → 100 % |
-| Motor rated current (VFD P-08) | 0 — enter it for the A readout on `/tech`; same value as P-08 on `/setup` |
+| Motor rated current (VFD P-08) | 0 — enter it for the A readout on `/tech`; same value as P-08 on `/versidrive` |
 
-`/setup` is a record of what the motor and drive are set to — the controller has no data link to the VersiDrive and cannot change its parameters. Fields: motor nameplate (V, A, kW, rpm, Hz, cos φ, star/delta), P-01 … P-25, brake release / engage time, peak push current, drive model, notes. Stored as one JSON string (`/api/setup`, NVS key `setup`, max 2500 chars). **P-08 is not part of that record**: it is the config value *Motor rated current*, so editing it on either page changes both.
+`/versidrive` documents how the motor and drive are set — the controller has no data link to the VersiDrive and cannot change its parameters. Fields: motor nameplate (V, A, kW, rpm, Hz, cos φ, star/delta), P-01 … P-25, brake release / engage time, peak push current, drive model, notes. Stored as one JSON string (`/api/setup`, NVS key `setup`, max 2500 chars). **P-08 is not part of that record**: it is the config value *Motor rated current*, so editing it on either page changes both.
 
 ### Readouts
 
