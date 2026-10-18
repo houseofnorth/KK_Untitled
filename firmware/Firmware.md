@@ -42,7 +42,7 @@ arduino-cli compile --fqbn esp32:esp32:XIAO_ESP32C3 --output-dir build/Untitled 
 | Button | Input | Action |
 |---|---|---|
 | RUN / STOP | RUN_IN, GPIO4 | Stopped: hold 2 s = start (may let go once red blinks); short press ignored. Starting or running: any press = stop + brake. Web Start/Stop act the same. |
-| WIFI ENABLE | BTN_IN, GPIO2 | AP on (blue blinks 1.5 s, then solid), or restart its timer if already on. Only switches on; ignored during an upload. GPIO2 is a strapping pin: holding it during power-up stops the board from booting. |
+| WIFI ENABLE | BTN_IN, GPIO2 | AP on (blue blinks fast 1.5 s, then 2 Hz until a phone connects), or restart its timer if already on. Only switches on; ignored during an upload. GPIO2 is a strapping pin: holding it during power-up stops the board from booting. |
 
 ### Lights (priority top to bottom)
 

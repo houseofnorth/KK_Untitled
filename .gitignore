@@ -6,3 +6,4 @@ firmware/**/build/
 _archive/
 *.xls
 bench/
+offline/
